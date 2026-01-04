@@ -1,0 +1,96 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build - ${{ matrix.platform.os-name }}
+    strategy:
+      matrix:
+        platform:
+          - os-name: Linux
+            runs-on: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary-name: meal_manager
+          - os-name: Windows
+            runs-on: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary-name: meal_manager.exe
+          - os-name: macOS
+            runs-on: macos-latest
+            target: x86_64-apple-darwin
+            binary-name: meal_manager
+
+    runs-on: ${{ matrix.platform.runs-on }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: matrix.platform.os-name == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            pkg-config \
+            libwayland-dev \
+            libxkbcommon-dev \
+            libxcb1-dev \
+            libvulkan-dev \
+            libx11-dev \
+            libasound2-dev
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.target }}
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.platform.target }}
+
+      - name: Package
+        shell: bash
+        run: |
+          mkdir -p release
+          if [ "${{ matrix.platform.os-name }}" = "Windows" ]; then
+            cp target/${{ matrix.platform.target }}/release/${{ matrix.platform.binary-name }} release/
+            cd release && zip ../meal_manager-${{ matrix.platform.target }}.zip *
+          else
+            cp target/${{ matrix.platform.target }}/release/${{ matrix.platform.binary-name }} release/
+            cd release && tar czf ../meal_manager-${{ matrix.platform.target }}.tar.gz *
+          fi
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: meal_manager-${{ matrix.platform.target }}
+          path: |
+            meal_manager-*.zip
+            meal_manager-*.tar.gz
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            artifacts/meal_manager-*.zip
+            artifacts/meal_manager-*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
