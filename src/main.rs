@@ -1,12 +1,20 @@
-use meal_manager::app::{AppState, Action, AppEvent, Page};
+use meal_manager::Xilem;
+use meal_manager::app::{Action, AppState, AppStatus, EditingState, Page};
 use meal_manager::dining_analysis::spawn_worker;
 use meal_manager::ui::app_logic::app_logic;
-use meal_manager::Xilem;
+use std::sync::{Arc, mpsc};
+use xilem::EventLoop;
+use xilem::masonry::peniko::Blob;
 
-fn main() {
+const PINGFANG_FONT: &[u8] = include_bytes!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/resources/fonts/PingFang.ttc"
+));
+
+fn main() -> Result<(), winit::error::EventLoopError> {
     // 1. 初始化通信管道
     let (tx_action, rx_action) = crossbeam_channel::unbounded();
-    let (tx_event, rx_event) = std::sync::mpsc::channel();
+    let (tx_event, rx_event) = mpsc::channel();
 
     // 2. 启动后台 Compio 线程
     spawn_worker(rx_action, tx_event);
@@ -17,34 +25,21 @@ fn main() {
         input_text: "示例：\nEliza: 10\n张三: 20".to_string(),
         current_report: Default::default(),
         employees: vec![],
-        edit_name: "".into(),
-        edit_nicks: "".into(),
+        editing: EditingState::new_for_add(),
         tx_action: tx_action.clone(),
-        status_msg: "就绪".into(),
+        status: AppStatus::default(),
+        rx_event: rx_event,
     };
 
     // 初始加载一次数据
-    tx_action.send(Action::LoadEmployees).unwrap();
+    if let Err(e) = tx_action.send(Action::LoadEmployees) {
+        eprintln!("初始化加载员工数据失败: {}", e);
+        // 继续启动，但初始数据可能为空
+    }
 
     // 4. 启动 Xilem
-    let app = Xilem::new(initial_state, |state: &mut AppState| {
-        // --- 核心：事件轮询 (在每次 UI 更新时检查后台消息) ---
-        while let Ok(event) = rx_event.try_recv() {
-            match event {
-                AppEvent::EmployeesLoaded(list) => {
-                    state.employees = list;
-                }
-                AppEvent::ReportReady(report) => {
-                    state.current_report = report;
-                    state.status_msg = "计算完成".into();
-                }
-                AppEvent::StatusMessage(msg) => {
-                    state.status_msg = msg;
-                }
-            }
-        }
-        app_logic(state)
-    });
+    let app = Xilem::new(initial_state, move |state: &mut AppState| app_logic(state))
+        .with_font(Blob::new(Arc::new(PINGFANG_FONT)));
 
-    app.run_windowed(Xilem::with_user_event(), "报餐助手 Pro".into()).unwrap();
+    app.run_in(EventLoop::with_user_event())
 }
