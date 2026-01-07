@@ -1,218 +1,193 @@
-use crate::app::{Action, AppState, EmployeeData};
-use crate::ui::CJK_FONT_STACK;
-use xilem::masonry::properties::types::{Length, MainAxisAlignment};
-use xilem::style::Style;
-use xilem::view::{FlexExt, button, flex_col, flex_row, label, sized_box, text_input};
-use xilem::{Color, WidgetView};
-use xilem_core::Edit;
+//! 设置页面 - UI相关
 
-pub fn settings_page(state: &mut AppState) -> impl WidgetView<Edit<AppState>> + use<> {
-    sized_box(
-        flex_col((
-            label("设置").font(CJK_FONT_STACK).text_size(24.0),
-            // 员工管理表格
-            flex_col((
-                label("员工列表").font(CJK_FONT_STACK).text_size(18.0),
-                // 表头
-                employee_table_header(),
-                //现有员工行
-                flex_col(
-                    state
-                        .employees
-                        .iter()
-                        .map(|emp| {
-                            employee_row_editable(
-                                emp.clone(),
-                                state.editing.original_name.clone(),
-                                state.editing.name.clone(),
-                                state.editing.nicknames.clone(),
-                            )
-                        })
-                        .collect::<Vec<_>>(),
-                )
-                .gap(Length::px(5.0)),
-                // 新增行（空输入框 + 添加按钮）
-                employee_edit_row_with_add(state.editing.name.clone(), state.editing.nicknames.clone()),
-            ))
-            .gap(Length::px(10.0))
-            .padding(15.0)
-            .background_color(Color::from_rgb8(245, 245, 245)),
-            // 退出按钮
-            button(
-                label("退出程序").font(CJK_FONT_STACK),
-                |state: &mut AppState| {
-                    state.status.is_running = false;
-                },
-            )
-            .background_color(Color::from_rgb8(255, 200, 200)),
-        ))
-        .gap(Length::px(15.0))
-        .padding(20.0),
-    )
+use makepad_widgets::*;
+
+/// 设置页面状态（UI相关）
+pub struct SettingsState {
+    pub editing_employee: Option<crate::core::EmployeeData>,
+    pub new_employee_name: String,
+    pub new_employee_nicknames: String,
 }
 
-fn employee_table_header() -> impl WidgetView<Edit<AppState>> + use<> {
-    flex_row((
-        label("姓名")
-            .font(CJK_FONT_STACK)
-            .text_size(14.0)
-            .color(Color::from_rgb8(80, 80, 80)),
-        label("昵称")
-            .font(CJK_FONT_STACK)
-            .text_size(14.0)
-            .color(Color::from_rgb8(80, 80, 80)),
-        label("操作")
-            .font(CJK_FONT_STACK)
-            .text_size(14.0)
-            .color(Color::from_rgb8(80, 80, 80)),
-    ))
-    .main_axis_alignment(MainAxisAlignment::SpaceBetween)
-    .padding(8.0)
-    .background_color(Color::from_rgb8(230, 230, 230))
+impl Default for SettingsState {
+    fn default() -> Self {
+        Self {
+            editing_employee: None,
+            new_employee_name: String::new(),
+            new_employee_nicknames: String::new(),
+        }
+    }
 }
 
-fn employee_row_editable(
-    emp: EmployeeData,
-    state_editing: Option<String>,
-    state_edit_name: String,
-    state_edit_nicks: String,
-) -> impl WidgetView<Edit<AppState>> + use<> {
-    let name = emp.name.clone();
-    let nicks = emp.nicknames.clone();
-    let is_editing = state_editing.as_ref() == Some(&name);
+live_design! {
+    use link::widgets::*;
 
-    let name_for_input1 = name.clone();
-    let name_for_input2 = name.clone();
-    let name_for_edit = name.clone();
-    let nicks_for_edit = nicks.clone();
-    let name_for_delete = name.clone();
+    SettingsPage = <View> {
+        flow: Down,
+        spacing: 20,
 
-    flex_row((
-        text_input(
-            if is_editing {
-                state_edit_name.clone()
-            } else {
-                name.clone()
-            },
-            move |state: &mut AppState, val| {
-                if state.editing.original_name.as_ref() == Some(&name_for_input1) {
-                    state.editing.name = val;
+        section_title = <Label> {
+            text: "员工管理",
+            draw_text: {
+                color: #333,
+                text_style: <THEME_FONT_BOLD> {
+                    font_size: 24.0,
                 }
-            },
-        )
-        .font(CJK_FONT_STACK)
-        .text_size(14.0)
-        .flex(1.0),
-        text_input(
-            if is_editing {
-                state_edit_nicks.clone()
-            } else {
-                nicks.clone()
-            },
-            move |state: &mut AppState, val| {
-                if state.editing.original_name.as_ref() == Some(&name_for_input2) {
-                    state.editing.nicknames = val;
-                }
-            },
-        )
-        .font(CJK_FONT_STACK)
-        .text_size(14.0)
-        .flex(1.0),
-        if is_editing {
-            // 保存按钮
-            button(
-                label("保存").font(CJK_FONT_STACK),
-                move |state: &mut AppState| {
-                    if let Some(old_name) = state.editing.original_name.take() {
-                        if let Err(e) = state
-                            .tx_action
-                            .send(Action::UpdateEmployee {
-                                old_name,
-                                new_data: EmployeeData {
-                                    name: state.editing.name.clone(),
-                                    nicknames: state.editing.nicknames.clone(),
-                                },
-                            })
-                        {
-                            state.status.message = format!("发送更新请求失败: {}", e);
-                        }
-                        state.editing.name.clear();
-                        state.editing.nicknames.clear();
-                        state.editing.is_adding_new = true;
-                    }
-                },
-            )
-            .background_color(Color::from_rgb8(200, 255, 200))
-            .boxed()
-        } else {
-            // 编辑按钮
-            button(
-                label("编辑").font(CJK_FONT_STACK),
-                move |state: &mut AppState| {
-                    state.editing.original_name = Some(name_for_edit.clone());
-                    state.editing.name = name_for_edit.clone();
-                    state.editing.nicknames = nicks_for_edit.clone();
-                    state.editing.is_adding_new = false;
-                },
-            )
-            .background_color(Color::from_rgb8(200, 220, 255))
-            .boxed()
+            }
         },
-        button(
-            label("删除").font(CJK_FONT_STACK),
-            move |state: &mut AppState| {
-                if let Err(e) = state
-                    .tx_action
-                    .send(Action::DeleteEmployee(name_for_delete.clone()))
-                {
-                    state.status.message = format!("发送删除请求失败: {}", e);
+
+        add_section = <View> {
+            flow: Down,
+            spacing: 10,
+
+            add_title = <Label> {
+                text: "添加员工",
+                draw_text: {
+                    color: #333,
+                    text_style: <THEME_FONT_BOLD> {
+                        font_size: 18.0,
+                    }
                 }
             },
-        )
-        .background_color(Color::from_rgb8(255, 200, 200)),
-    ))
-    .gap(Length::px(8.0))
-    .padding(8.0)
-    .background_color(Color::from_rgb8(255, 255, 255))
+
+            name_input = <View> {
+                flow: Right,
+                spacing: 10,
+                align: { x: 0.0, y: 0.5 },
+
+                name_label = <Label> {
+                    text: "姓名:",
+                    draw_text: {
+                        color: #666,
+                        text_style: {
+                            font_size: 14.0,
+                        }
+                    }
+                },
+
+                name_field = <TextInput> {
+                    width: 200,
+                    height: Fit,
+                    draw_bg: {
+                        color: #fff,
+                    },
+                    draw_text: {
+                        color: #333,
+                    }
+                }
+            },
+
+            nicknames_input = <View> {
+                flow: Right,
+                spacing: 10,
+                align: { x: 0.0, y: 0.5 },
+
+                nicknames_label = <Label> {
+                    text: "昵称(逗号分隔):",
+                    draw_text: {
+                        color: #666,
+                        text_style: {
+                            font_size: 14.0,
+                        }
+                    }
+                },
+
+                nicknames_field = <TextInput> {
+                    width: 300,
+                    height: Fit,
+                    draw_bg: {
+                        color: #fff,
+                    },
+                    draw_text: {
+                        color: #333,
+                    }
+                }
+            },
+
+            add_button = <Button> {
+                width: Fit,
+                height: Fit,
+                padding: { top: 5, bottom: 5, left: 15, right: 15 },
+                text: "添加员工",
+                draw_text: {
+                    color: #fff,
+                },
+                draw_bg: {
+                    color: #4CAF50,
+                    radius: 4.0,
+                }
+            }
+        },
+
+        employees_list = <View> {
+            flow: Down,
+            spacing: 10,
+
+            list_title = <Label> {
+                text: "员工列表",
+                draw_text: {
+                    color: #333,
+                    text_style: <THEME_FONT_BOLD> {
+                        font_size: 18.0,
+                    }
+                }
+            },
+
+            list_container = <View> {
+                flow: Down,
+                spacing: 5,
+                draw_bg: {
+                    color: #f9f9f9,
+                    radius: 4.0,
+                },
+                padding: 10,
+
+                // 员工列表项将在这里动态添加
+                placeholder = <Label> {
+                    text: "暂无员工数据",
+                    draw_text: {
+                        color: #999,
+                        text_style: {
+                            font_size: 14.0,
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
-fn employee_edit_row_with_add(
-    name: String,
-    nicks: String,
-) -> impl WidgetView<Edit<AppState>> + use<> {
-    flex_row((
-        text_input(name, |state: &mut AppState, val| {
-            state.editing.name = val;
-        })
-        .font(CJK_FONT_STACK)
-        .text_size(14.0)
-        .flex(1.0),
-        text_input(nicks, |state: &mut AppState, val| {
-            state.editing.nicknames = val;
-        })
-        .font(CJK_FONT_STACK)
-        .text_size(14.0)
-        .flex(1.0),
-        button(
-            label("添加").font(CJK_FONT_STACK),
-            |state: &mut AppState| {
-                if !state.editing.name.is_empty() {
-                    if let Err(e) = state
-                        .tx_action
-                        .send(Action::SaveEmployee(EmployeeData {
-                            name: state.editing.name.clone(),
-                            nicknames: state.editing.nicknames.clone(),
-                        }))
-                    {
-                        state.status.message = format!("发送添加请求失败: {}", e);
-                    }
-                    state.editing.reset();
-                }
-            },
-        )
-        .background_color(Color::from_rgb8(200, 255, 200)),
-    ))
-    .gap(Length::px(8.0))
-    .padding(8.0)
-    .background_color(Color::from_rgb8(255, 255, 255))
+/// 设置页面组件 - UI相关
+#[derive(Live, LiveHook)]
+pub struct SettingsPage {
+    #[live]
+    ui: WidgetRef,
+    #[rust]
+    #[allow(dead_code)]
+    state: SettingsState,
+}
+
+impl Default for SettingsPage {
+    fn default() -> Self {
+        Self {
+            ui: WidgetRef::default(),
+            state: SettingsState::default(),
+        }
+    }
+}
+
+impl LiveRegister for SettingsPage {
+    fn live_register(cx: &mut Cx) {
+        live_design(cx);
+    }
+}
+
+impl SettingsPage {
+    pub fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
+        self.ui.handle_event(cx, event, scope);
+    }
+
+    pub fn draw(&mut self, cx: &mut Cx2d, scope: &mut Scope) {
+        self.ui.draw_all(cx, scope);
+    }
 }
