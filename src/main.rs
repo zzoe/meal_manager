@@ -1,3 +1,3 @@
 fn main() {
-    meal_manager::ui::app_main();
+    meal_manager::app::app_main();
 }
