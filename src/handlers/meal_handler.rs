@@ -17,20 +17,29 @@ impl MealHandler {
         let meal_view = ui.view(id!(body)).as_meal_view();
 
         match action {
-            MealUiAction::NavToStats => meal_view.show_page(cx, "stats"),
+            MealUiAction::NavToStats => {
+                meal_view.show_page(cx, "stats");
+            }
             MealUiAction::NavToConfig => {
                 meal_view.show_page(cx, "config");
-                let _ = dispatcher.dispatch_blocking(move || load_config_task());
+                let _ = dispatcher.dispatch_blocking(move || {
+                    load_config_task();
+                });
             }
             MealUiAction::SubmitText(text) => {
                 let text = text.clone();
-                meal_view.set_loading_status(cx, "计算中...");
-                let _ = dispatcher.dispatch_blocking(move || analyze_meal_data(text));
+                meal_view.set_loading_status(cx, "正在计算...");
+                let _ = dispatcher.dispatch_blocking(move || {
+                    analyze_meal_data(text);
+                });
             }
             MealUiAction::SaveConfig(text) => {
                 let text = text.clone();
-                let _ = dispatcher.dispatch_blocking(move || save_config_task(text));
+                let _ = dispatcher.dispatch_blocking(move || {
+                    save_config_task(text);
+                });
             }
+            // 处理折叠动作（虽然 UI 内部消化了，但这里留个空分支）
             _ => (),
         }
     }
@@ -40,17 +49,23 @@ impl MealHandler {
 
         match result {
             MealAnalysisResult::Success {
-                lunch_summary, lunch_details,
-                dinner_summary, dinner_details,
-                exception_summary, exception_details,
-                .. // 忽略 summary
+                lunch_summary,
+                lunch_details,
+                dinner_summary,
+                dinner_details,
+                exception_summary,
+                exception_details,
             } => {
                 meal_view.reset_loading_status(cx);
+
                 meal_view.update_results(
                     cx,
-                    lunch_summary, lunch_details,
-                    dinner_summary, dinner_details,
-                    exception_summary, exception_details
+                    lunch_summary,
+                    lunch_details,
+                    dinner_summary,
+                    dinner_details,
+                    exception_summary,
+                    exception_details,
                 );
             }
             MealAnalysisResult::ConfigLoaded(text) => {

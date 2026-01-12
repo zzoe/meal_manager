@@ -1,5 +1,5 @@
-use redb::{Database, TableDefinition, ReadableTable, ReadableDatabase};
 use crate::backend::domain::Employee;
+use redb::{Database, ReadableDatabase, ReadableTable, TableDefinition};
 use std::sync::OnceLock;
 
 const TABLE_EMPLOYEES: TableDefinition<&str, &str> = TableDefinition::new("employees");
@@ -33,17 +33,15 @@ pub fn save_employees_to_db(employees: Vec<Employee>) -> anyhow::Result<()> {
 
 pub fn load_employees_from_db() -> Vec<Employee> {
     let db = get_db();
-    let read_txn = db.begin_read().unwrap(); // ✅ 现在 begin_read 可以找到了
+    let read_txn = db.begin_read().unwrap();
     let table = read_txn.open_table(TABLE_EMPLOYEES).unwrap();
-    
+
     let mut list = Vec::new();
     for item in table.iter().unwrap() {
         if let Ok((_, v)) = item {
-             // ✅ 修复：v.value() 是 &[u8]，用 from_slice
-             // 或者 v.value() 是 &str (因为表定义是<&str, &str>)，直接用 from_str
-             if let Ok(emp) = serde_json::from_str::<Employee>(v.value()) {
-                 list.push(emp);
-             }
+            if let Ok(emp) = serde_json::from_str::<Employee>(v.value()) {
+                list.push(emp);
+            }
         }
     }
     list
@@ -53,14 +51,17 @@ pub fn parse_config_text(text: &str) -> Vec<Employee> {
     let mut list = Vec::new();
     for line in text.lines() {
         let line = line.trim();
-        if line.is_empty() { continue; }
-        
+        if line.is_empty() {
+            continue;
+        }
+
         let parts: Vec<&str> = line.split(&[':', '：'][..]).collect();
         if !parts.is_empty() {
             let name = parts[0].trim().to_string();
             let mut aliases = Vec::new();
             if parts.len() > 1 {
-                aliases = parts[1].split(&[',', '，'][..])
+                aliases = parts[1]
+                    .split(&[',', '，'][..])
                     .map(|s| s.trim().to_string())
                     .filter(|s| !s.is_empty())
                     .collect();
@@ -72,11 +73,14 @@ pub fn parse_config_text(text: &str) -> Vec<Employee> {
 }
 
 pub fn employees_to_text(list: &[Employee]) -> String {
-    list.iter().map(|e| {
-        if e.aliases.is_empty() {
-            e.name.clone()
-        } else {
-            format!("{}: {}", e.name, e.aliases.join(", "))
-        }
-    }).collect::<Vec<_>>().join("\n")
+    list.iter()
+        .map(|e| {
+            if e.aliases.is_empty() {
+                e.name.clone()
+            } else {
+                format!("{}: {}", e.name, e.aliases.join(", "))
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }

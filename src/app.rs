@@ -10,11 +10,24 @@ live_design! {
     use crate::components::meal_view::MealView;
 
     App = {{App}} {
-        ui: <Window> {
-            window: {inner_size: vec2(800, 600)},
-            pass: {clear_color: #F2E6D8}
+        ui: <Root> {
+            main_window = <Window> {
+                window: {inner_size: vec2(1000, 600)},
+                pass: {clear_color: #F2E6D8}
 
-            body = <MealView> {}
+                caption_bar = {
+                    visible: true,
+                    margin: {left: -200},
+                    caption_label = {
+                        label = {
+                            text: "Meal Manager"
+                            draw_text: { color: #000 }
+                        }
+                    }
+                },
+
+                body = <MealView> {}
+            }
         }
     }
 }

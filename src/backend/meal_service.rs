@@ -52,9 +52,8 @@ pub fn analyze_meal_data(input_text: String) {
 
     // Key: 真名, Value: (中餐份数, 晚餐份数, 原始code)
     let mut valid_data_map: HashMap<String, (u32, u32, String)> = HashMap::new();
-
-    let mut unknown_people = Vec::new(); // 收集未知人员
-    let mut error_lines = Vec::new(); // 收集格式错误
+    let mut unknown_people = Vec::new();
+    let mut error_lines = Vec::new();
 
     // 2. 解析输入
     for line in input_text.lines() {
@@ -125,7 +124,7 @@ pub fn analyze_meal_data(input_text: String) {
         ));
     }
 
-    // B. 未知人员 (合并为一条)
+    // B. 未知人员
     if !unknown_people.is_empty() {
         final_exception_lines.push(format!("未知人员: {}", unknown_people.join("、")));
     }
@@ -135,7 +134,6 @@ pub fn analyze_meal_data(input_text: String) {
 
     let duration = start.elapsed();
 
-    // 耗时仅日志输出
     println!(
         "统计完成 | 总人数: {} | 中餐: {} | 晚餐: {} | 耗时: {}ms",
         reported_names.len(),
@@ -145,20 +143,19 @@ pub fn analyze_meal_data(input_text: String) {
     );
 
     Cx::post_action(MealAnalysisResult::Success {
-        // summary removed
-        lunch_summary: format!("中餐合计: {} 份", total_lunch),
+        lunch_summary: format!("🍱 中餐 ({}份)", total_lunch),
         lunch_details: if lunch_list.is_empty() {
             "无".to_string()
         } else {
             lunch_list.join("、")
         },
-        dinner_summary: format!("晚餐合计: {} 份", total_dinner),
+        dinner_summary: format!("🥘 晚餐 ({}份)", total_dinner),
         dinner_details: if dinner_list.is_empty() {
             "无".to_string()
         } else {
             dinner_list.join("、")
         },
-        exception_summary: format!("异常/未报: {} 条", final_exception_lines.len()),
+        exception_summary: format!("⚠️ 异常监控 ({}条)", final_exception_lines.len()),
         exception_details: if final_exception_lines.is_empty() {
             "无".to_string()
         } else {

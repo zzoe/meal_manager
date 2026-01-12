@@ -4,31 +4,69 @@ live_design! {
     use link::widgets::*;
     use link::theme::*;
 
-    COLOR_BG_PAGE = #F2E6D8
-    COLOR_BORDER_RED = #FF6B6B
-    COLOR_BG_CARD = #F9F0E6
-    COLOR_TEXT_RED = #D00
-    COLOR_BTN_NORMAL = #FF6B6B
-    COLOR_BTN_HOVER = #FF8888
+    // 调色板
+    COLOR_BG_APP = #F3F4F6
+    COLOR_BG_SIDEBAR = #1F2937
+    COLOR_BG_CARD = #FFFFFF
 
-    // 通用卡片容器
-    pub InfoCard = <RoundedView> {
+    COLOR_TEXT_PRIMARY = #111827
+    COLOR_TEXT_SECONDARY = #6B7280
+
+    // 功能色
+    COLOR_PRIMARY = #2196F3
+    COLOR_PRIMARY_HOVER = #1976D2
+
+    // 结果卡片头部背景
+    COLOR_LUNCH_HEADER = #FFF7ED    // Orange-50
+    COLOR_DINNER_HEADER = #EEF2FF   // Indigo-50
+    COLOR_ERROR_HEADER = #FEF2F2    // Red-50
+
+    // 结果卡片标题文字
+    COLOR_LUNCH_TEXT = #B45309      // Orange-700
+    COLOR_DINNER_TEXT = #4338CA     // Indigo-700
+    COLOR_ERROR_TEXT = #B91C1C      // Red-700
+
+    COLOR_BORDER = #E5E7EB
+
+    // 1. 结果展示卡片 (美化版)
+    pub ResultCard = <RoundedView> {
         width: Fill, height: Fill
-        flow: Down, spacing: 0.0, padding: 5.0
+        flow: Down, spacing: 0.0
+
         draw_bg: {
             color: (COLOR_BG_CARD)
-            border_color: (COLOR_BORDER_RED)
-            border_size: 2.0
-            border_radius: 4.0
+            border_color: (COLOR_BORDER)
+            border_size: 1.0
+            border_radius: 8.0
         }
+
+        // 标题栏 (带背景色)
+        header_slot = <RoundedYView> {
+            width: Fill, height: 40.0
+            padding: {top: 10.0, left: 15.0}
+            draw_bg: {
+                color: #f0f0f0
+                border_radius: vec2(8.0, 1.0),
+            }
+
+            header_label = <Label> {
+                text: "Title"
+                draw_text: {
+                    text_style: { font_size: 12.0 }
+                }
+            }
+        }
+
+        // 内容区 (白色背景 + 滚动)
         content_view = <ScrollYView> {
             width: Fill, height: Fill
-            padding: 5.0
+            padding: 15.0
+
             content = <Label> {
                 width: Fill, height: Fit
-                text: ""
+                text: "暂无数据"
                 draw_text: {
-                    color: (COLOR_TEXT_RED)
+                    color: (COLOR_TEXT_PRIMARY)
                     wrap: Word
                     text_style: { font_size: 13.0 }
                 }
@@ -36,14 +74,73 @@ live_design! {
         }
     }
 
+    // 2. 侧边栏导航按钮
+    pub NavButton = <Button> {
+        width: Fill, height: 40.0
+        draw_text: {
+            color: #D1D5DB
+            text_style: { font_size: 12.0 }
+        }
+        draw_bg: {
+            color: #0000
+            border_size: 0.0
+            border_radius: 4.0
+            color_hover: #374151
+            color_down: #111827
+
+            // 确保状态切换时颜色正确
+            instance hover: 0.0
+            instance focus: 0.0
+            instance down: 0.0
+        }
+    }
+
+    // 3. 侧边栏折叠按钮 (小正方形)
+    pub ToggleButton = <Button> {
+        width: Fill, height: 30.0
+        draw_text: {
+            color: #9CA3AF
+            text_style: { font_size: 14.0 }
+        }
+        draw_bg: {
+            color: #0000
+            border_size: 0.0
+            color_hover: #374151
+            color_down: #111827
+        }
+    }
+
+    // 4. 红色主按钮
+    pub RedButton = <Button> {
+        width: Fill, height: 48.0
+        draw_text: {
+            color: #fff
+            text_style: { font_size: 14.0 }
+        }
+        draw_bg: {
+            // 显式定义所有状态颜色，防止 default/hover/down 之间插值出透明度
+            color: #EF4444
+            color_hover: #DC2626
+            color_down: #B91C1C
+            color_focus: #EF4444
+
+            border_size: 0.0
+            border_radius: 6.0
+
+            instance hover: 0.0
+            instance focus: 0.0
+            instance down: 0.0
+        }
+    }
+
+    // 5. 纯净输入框
     pub CleanTextInput = <TextInput> {
         width: Fill, height: Fit
         padding: 0.0
 
         draw_bg: {
-            color: #0000 // 基础透明
+            color: #0000
             border_size: 0.0
-
             instance hover: 0.0
             instance focus: 0.0
             color_hover: #0000
@@ -51,37 +148,17 @@ live_design! {
         }
 
         draw_text: {
-            text_style: { font_size: 14.0 }
-            color: #333
-
-            // 锁定文字颜色
-            color_hover: #333
-            color_focus: #333
+            text_style: { font_size: 13.0 }
+            color: #111827
+            color_hover: #111827
+            color_focus: #111827
         }
 
         draw_cursor: {
-            instance focus: 0.0
-            color: #333
+            color: (COLOR_PRIMARY)
         }
         draw_selection: {
-            color: #FF6B6B44
-        }
-    }
-
-    // 红色按钮 (无边框)
-    pub RedButton = <Button> {
-        width: Fill, height: 50.0
-        draw_text: {
-            color: #fff
-            text_style: { font_size: 14.0 }
-        }
-        draw_bg: {
-            color: (COLOR_BTN_NORMAL)
-            color_hover: (COLOR_BTN_HOVER)
-            color_focus: (COLOR_BTN_NORMAL)
-            color_down: #D04040
-            border_size: 0.0
-            border_radius: 4.0
+            color: #BFDBFE
         }
     }
 
@@ -89,112 +166,151 @@ live_design! {
         width: Fill, height: Fill
         flow: Right, spacing: 0.0
 
-        // --- 左侧：导航栏 ---
-        <View> {
-            width: 80.0, height: Fill
-            flow: Down, spacing: 10.0, padding: {top: 20.0, left: 5.0, right: 5.0}
-            show_bg: true, draw_bg: { color: #333 }
+        // --- 左侧：侧边栏 ---
+        sidebar = <View> {
+            width: 120.0, height: Fill
+            flow: Down, spacing: 10.0, padding: 10.0
+            show_bg: true, draw_bg: { color: (COLOR_BG_SIDEBAR) }
 
-            btn_nav_stats = <RedButton> { text: "统计" }
-            btn_nav_config = <RedButton> { text: "配置" }
+            // 顶部折叠按钮区
+            <View> {
+                width: Fill, height: Fit, align: {x: 1.0}
+                btn_toggle = <ToggleButton> { text: "<<" }
+            }
+
+            // 导航区
+            nav_group = <View> {
+                width: Fill, height: Fit
+                flow: Down, spacing: 5.0
+
+                btn_nav_stats = <NavButton> { text: "数据统计" }
+                btn_nav_config = <NavButton> { text: "人员配置" }
+            }
         }
 
-        // --- 右侧：内容区 ---
+        // --- 右侧：工作区 ---
         content_container = <View> {
             width: Fill, height: Fill
-            show_bg: true, draw_bg: { color: (COLOR_BG_PAGE) }
+            show_bg: true, draw_bg: { color: (COLOR_BG_APP) }
 
-            // === 页面 1: 统计页 ===
+            // >>>>>> 页面 1: 统计页
             page_stats = <View> {
                 visible: true
                 width: Fill, height: Fill
-                flow: Right, spacing: 0.0
+                flow: Right, spacing: 15.0, padding: 15.0
 
-                // 列1：输入区
-                <View> {
-                    width: Fit, height: Fill
+                // 列 1：数据输入面板
+                <RoundedView> {
+                    width: 240.0, height: Fill
                     flow: Down, spacing: 10.0, padding: 15.0
 
-                    <Label> {
-                        text: "今日接龙数据 (Shift+Enter换行):"
-                        draw_text: { color: (COLOR_TEXT_RED), text_style: { font_size: 12.0 } }
+                    draw_bg: {
+                        color: (COLOR_BG_CARD)
+                        border_color: (COLOR_BORDER)
+                        border_size: 1.0
+                        border_radius: 8.0
                     }
 
+                    <Label> {
+                        text: "数据录入"
+                        draw_text: { color: (COLOR_TEXT_PRIMARY), text_style: { font_size: 14.0 } }
+                    }
+
+                    <Label> {
+                        text: "Shift+Enter 换行"
+                        draw_text: { color: (COLOR_TEXT_SECONDARY), text_style: { font_size: 11.0 } }
+                    }
+
+                    // 输入框容器
                     <RoundedView> {
                         width: Fill, height: Fill
                         draw_bg: {
-                            color: #fff8f0
-                            border_color: (COLOR_BORDER_RED)
+                            color: #F9FAFB
+                            border_color: (COLOR_BORDER)
                             border_size: 1.0
-                            border_radius: 2.0
+                            border_radius: 4.0
                         }
-                        padding: 5.0
+                        padding: 8.0
 
                         <ScrollYView> {
                             width: Fill, height: Fill
                             input_box = <CleanTextInput> {
-                                text: "张三: 01\n李四: 10"
+                                text: ""
                             }
                         }
                     }
 
-                    btn_run = <RedButton> { text: "开始统计" }
+                    btn_run = <RedButton> { text: "开始分析" }
                 }
 
-                // 列2：结果展示区
+                // 列 2：结果仪表盘
                 <View> {
                     width: Fill, height: Fill
-                    flow: Down, spacing: 10.0, padding: {top: 20.0, right: 20.0, bottom: 20.0}
+                    flow: Down, spacing: 10.0
 
-                    // 1. 中餐
-                    <View> { width: Fill, height: Fill, flow: Down, spacing: 5.0
-                        lunch_header = <Label> {
-                            text: "中餐:",
-                            draw_text: { color: (COLOR_TEXT_RED), text_style: { font_size: 12.0 } }
+                    // 1. 🍱 中餐 (x份)
+                    <View> {
+                        width: Fill, height: Fill,
+                        lunch_card = <ResultCard> {
+                            header_slot = {
+                                draw_bg: { color: (COLOR_LUNCH_HEADER) }
+                                header_label = { text: "🍱 中餐", draw_text: { color: (COLOR_LUNCH_TEXT) } }
+                            }
                         }
-                        lunch_card = <InfoCard> {}
                     }
 
-                    // 2. 晚餐
-                    <View> { width: Fill, height: Fill, flow: Down, spacing: 5.0
-                        dinner_header = <Label> {
-                            text: "晚餐:",
-                            draw_text: { color: (COLOR_TEXT_RED), text_style: { font_size: 12.0 } }
+                    // 2. 🥘 晚餐 (y份)
+                    <View> {
+                        width: Fill, height: Fill,
+                        dinner_card = <ResultCard> {
+                            header_slot = {
+                                draw_bg: { color: (COLOR_DINNER_HEADER) }
+                                header_label = { text: "🥘 晚餐", draw_text: { color: (COLOR_DINNER_TEXT) } }
+                            }
                         }
-                        dinner_card = <InfoCard> {}
                     }
 
-                    // 3. 异常/未报
-                    <View> { width: Fill, height: Fill, flow: Down, spacing: 5.0
-                        exception_header = <Label> {
-                            text: "异常/未报:",
-                            draw_text: { color: (COLOR_TEXT_RED), text_style: { font_size: 12.0 } }
+                    // 3. ⚠️ 异常监控 (z条)
+                    <View> {
+                        width: Fill, height: Fill,
+                        exception_card = <ResultCard> {
+                            header_slot = {
+                                draw_bg: { color: (COLOR_ERROR_HEADER) }
+                                header_label = { text: "⚠️ 异常监控", draw_text: { color: (COLOR_ERROR_TEXT) } }
+                            }
                         }
-                        exception_card = <InfoCard> {}
                     }
                 }
             }
 
-            // === 页面 2: 配置页 ===
+            // >>>>>> 页面 2: 配置页
             page_config = <View> {
                 visible: false
                 width: Fill, height: Fill
-                flow: Down, spacing: 10.0, padding: 20.0
+                flow: Down, spacing: 20.0, padding: 40.0
 
-                <Label> {
-                    text: "员工名单 (姓名: 别名1, 别名2)"
-                    draw_text: { color: (COLOR_TEXT_RED), text_style: { font_size: 16.0 } }
+                <View> {
+                    width: Fill, height: Fit
+                    flow: Down, spacing: 5.0
+                    <Label> {
+                        text: "员工配置"
+                        draw_text: { color: (COLOR_TEXT_PRIMARY), text_style: { font_size: 18.0 } }
+                    }
+                    <Label> {
+                        text: "姓名: 昵称1, 昵称2"
+                        draw_text: { color: (COLOR_TEXT_SECONDARY), text_style: { font_size: 12.0 } }
+                    }
                 }
 
                 <RoundedView> {
                     width: Fill, height: Fill
                     draw_bg: {
-                        color: #fff8f0
-                        border_color: (COLOR_BORDER_RED)
+                        color: (COLOR_BG_CARD)
+                        border_color: (COLOR_BORDER)
                         border_size: 1.0
-                        border_radius: 2.0
+                        border_radius: 8.0
                     }
-                    padding: 5.0
+                    padding: 10.0
 
                     <ScrollYView> {
                         width: Fill, height: Fill
@@ -204,7 +320,10 @@ live_design! {
                     }
                 }
 
-                btn_save_config = <RedButton> { text: "保存配置" }
+                <View> {
+                    width: Fill, height: Fit, align: {x: 1.0}
+                    btn_save_config = <RedButton> { width: 150.0, text: "保存配置" }
+                }
             }
         }
     }
@@ -214,6 +333,7 @@ live_design! {
 pub enum MealUiAction {
     NavToStats,
     NavToConfig,
+    ToggleSidebar,
     SubmitText(String),
     SaveConfig(String),
     None,
@@ -223,6 +343,8 @@ pub enum MealUiAction {
 pub struct MealView {
     #[deref]
     view: View,
+    #[rust(false)]
+    sidebar_collapsed: bool, // 侧边栏状态
 }
 
 impl Widget for MealView {
@@ -239,6 +361,23 @@ impl Widget for MealView {
 impl WidgetMatchEvent for MealView {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
         let uid = self.widget_uid();
+
+        // 侧边栏折叠
+        if self.button(id!(btn_toggle)).clicked(actions) {
+            self.sidebar_collapsed = !self.sidebar_collapsed;
+
+            // 动态修改样式
+            let width = if self.sidebar_collapsed { 50.0 } else { 180.0 };
+            let btn_text = if self.sidebar_collapsed { ">>" } else { "<<" };
+            let nav_visible = !self.sidebar_collapsed;
+
+            self.view(id!(sidebar))
+                .apply_over(cx, live! { width: (width) });
+            self.button(id!(btn_toggle)).set_text(cx, btn_text);
+            self.view(id!(nav_group)).set_visible(cx, nav_visible);
+
+            self.redraw(cx);
+        }
 
         if self.button(id!(btn_nav_stats)).clicked(actions) {
             cx.widget_action(uid, &HeapLiveIdPath::default(), MealUiAction::NavToStats);
@@ -295,19 +434,24 @@ impl MealViewRef {
         exception_text: &str,
     ) {
         if let Some(mut inner) = self.borrow_mut() {
-            inner.label(id!(lunch_header)).set_text(cx, lunch_title);
+            // 更新标题
+            inner
+                .label(id!(lunch_card.header_slot.header_label))
+                .set_text(cx, lunch_title);
+            inner
+                .label(id!(dinner_card.header_slot.header_label))
+                .set_text(cx, dinner_title);
+            inner
+                .label(id!(exception_card.header_slot.header_label))
+                .set_text(cx, exception_title);
+
+            // 更新内容
             inner
                 .label(id!(lunch_card.content_view.content))
                 .set_text(cx, lunch_text);
-
-            inner.label(id!(dinner_header)).set_text(cx, dinner_title);
             inner
                 .label(id!(dinner_card.content_view.content))
                 .set_text(cx, dinner_text);
-
-            inner
-                .label(id!(exception_header))
-                .set_text(cx, exception_title);
             inner
                 .label(id!(exception_card.content_view.content))
                 .set_text(cx, exception_text);
@@ -316,17 +460,17 @@ impl MealViewRef {
         }
     }
 
-    pub fn set_loading_status(&self, cx: &mut Cx, _msg: &str) {
-        // 由于 summary_label 移除了，这里暂时可以留空，或者在按钮上显示 loading
+    pub fn reset_loading_status(&self, cx: &mut Cx) {
         if let Some(mut inner) = self.borrow_mut() {
-            inner.button(id!(btn_run)).set_text(cx, "计算中...");
+            inner.button(id!(btn_run)).set_text(cx, "开始统计");
             inner.redraw(cx);
         }
     }
 
-    pub fn reset_loading_status(&self, cx: &mut Cx) {
+    // 复用 reset 逻辑来显示加载中
+    pub fn set_loading_status(&self, cx: &mut Cx, msg: &str) {
         if let Some(mut inner) = self.borrow_mut() {
-            inner.button(id!(btn_run)).set_text(cx, "开始统计");
+            inner.button(id!(btn_run)).set_text(cx, msg);
             inner.redraw(cx);
         }
     }
