@@ -367,7 +367,7 @@ impl WidgetMatchEvent for MealView {
             self.sidebar_collapsed = !self.sidebar_collapsed;
 
             // 动态修改样式
-            let width = if self.sidebar_collapsed { 50.0 } else { 180.0 };
+            let width = if self.sidebar_collapsed { 50.0 } else { 120.0 };
             let btn_text = if self.sidebar_collapsed { ">>" } else { "<<" };
             let nav_visible = !self.sidebar_collapsed;
 

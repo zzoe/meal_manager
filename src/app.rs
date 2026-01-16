@@ -38,7 +38,7 @@ app_main!(App);
 pub struct App {
     #[live]
     ui: WidgetRef,
-    #[rust(Dispatcher::builder().worker_threads(std::num::NonZeroUsize::new(2).unwrap()).build().unwrap())]
+    #[rust(Dispatcher::new().unwrap())]
     dispatcher: Dispatcher,
 }
 
