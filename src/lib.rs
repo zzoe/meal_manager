@@ -1,4 +1,6 @@
-pub mod app;
-pub mod backend;
-pub mod components;
-pub mod handlers;
+pub mod domain;
+pub mod storage;
+pub mod ui;
+pub mod services;
+
+pub use ui::app;

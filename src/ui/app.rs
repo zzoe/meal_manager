@@ -1,13 +1,13 @@
-use crate::backend::meal_service::MealAnalysisResult;
-use crate::components::meal_view::MealUiAction;
-use crate::handlers::meal_handler::MealHandler;
+use crate::services::MealAnalysisResult;
+use crate::ui::layout::app_shell::AppAction;
+use crate::ui::handlers::AppHandler;
 use compio::dispatcher::Dispatcher;
 use makepad_widgets::*;
 
 live_design! {
     use link::widgets::*;
     use link::theme::*;
-    use crate::components::meal_view::MealView;
+    use crate::ui::layout::app_shell::AppShell;
 
     App = {{App}} {
         ui: <Root> {
@@ -26,7 +26,7 @@ live_design! {
                     }
                 },
 
-                body = <MealView> {}
+                body = <AppShell> {}
             }
         }
     }
@@ -45,7 +45,7 @@ pub struct App {
 impl LiveRegister for App {
     fn live_register(cx: &mut Cx) {
         makepad_widgets::live_design(cx);
-        crate::components::live_design(cx);
+        crate::ui::register_live_design(cx);
     }
 }
 
@@ -53,17 +53,17 @@ impl MatchEvent for App {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
         for action in actions {
             if let Some(widget_action) = action.as_widget_action() {
-                let act = widget_action.cast::<MealUiAction>();
+                let act = widget_action.cast::<AppAction>();
                 match act {
-                    MealUiAction::None => (),
-                    _ => MealHandler::handle_ui_action(cx, &act, &self.ui, &self.dispatcher),
+                    AppAction::None => (),
+                    _ => AppHandler::handle_ui_action(cx, &act, &self.ui, &self.dispatcher),
                 }
             }
 
             let result = makepad_widgets::ActionCast::<MealAnalysisResult>::cast(action);
             match result {
                 MealAnalysisResult::None => (),
-                _ => MealHandler::handle_backend_result(cx, &result, &self.ui),
+                _ => AppHandler::handle_backend_result(cx, &result, &self.ui),
             }
         }
     }

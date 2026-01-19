@@ -57,7 +57,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Build
-        run: cargo build --release --target ${{ matrix.platform.target }}
+        run: MAKEPAD=lines cargo +nightly build --release --target ${{ matrix.platform.target }}
 
       - name: Package
         shell: bash
