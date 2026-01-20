@@ -1,9 +1,10 @@
-use crate::services::{MealAnalysisResult, analyze_meal, load_config, save_config};
+use crate::services::{MealAnalysisResult, analyze_meal, save_config};
 use crate::ui::layout::app_shell::{AppAction, AppShellWidgetRefExt};
 use crate::ui::pages::stats_page::StatsPageWidgetRefExt;
 use crate::ui::pages::config_page::ConfigPageWidgetRefExt;
 use compio::dispatcher::Dispatcher;
 use makepad_widgets::{Cx, WidgetRef, LiveId, ViewWidgetRefExt, id, live_id, PageFlipWidgetRefExt};
+use fastant::Instant;
 
 pub struct AppHandler;
 
@@ -24,10 +25,9 @@ impl AppHandler {
                 app_shell.show_page(cx, "stats");
             }
             AppAction::NavigateToConfig => {
+                let start = Instant::now();
                 app_shell.show_page(cx, "config");
-                let _ = dispatcher.dispatch_blocking(move || {
-                    load_config();
-                });
+                println!("切换到配置页耗时: {:?}", start.elapsed());
             }
             AppAction::SubmitAnalysis(text) => {
                 let text = text.clone();
@@ -78,11 +78,13 @@ impl AppHandler {
                 }
             }
             MealAnalysisResult::ConfigLoaded(text) => {
+                let start = Instant::now();
                 if let Some(mut page_flip) = app_shell.view(id!(navigation)).as_page_flip().borrow_mut() {
                     if let Some(config_page) = page_flip.page(cx, live_id!(config)) {
                         config_page.as_config_page().set_config_text(cx, text);
                     }
                 }
+                println!("ConfigLoaded处理耗时: {:?}", start.elapsed());
             }
             MealAnalysisResult::ConfigSaved => {
                 if let Some(mut page_flip) = app_shell.view(id!(navigation)).as_page_flip().borrow_mut() {
