@@ -2,7 +2,6 @@ use crate::services::{MealAnalysisResult, analyze_meal, save_config};
 use crate::ui::layout::app_shell::{AppAction, AppShellWidgetRefExt};
 use crate::ui::pages::stats_page::StatsPageWidgetRefExt;
 use crate::ui::pages::config_page::ConfigPageWidgetRefExt;
-use compio::dispatcher::Dispatcher;
 use makepad_widgets::{Cx, WidgetRef, LiveId, ViewWidgetRefExt, id, live_id, PageFlipWidgetRefExt};
 use fastant::Instant;
 
@@ -13,7 +12,6 @@ impl AppHandler {
         cx: &mut Cx,
         action: &AppAction,
         ui: &WidgetRef,
-        dispatcher: &Dispatcher,
     ) {
         let app_shell = ui.widget(&[
             LiveId::from_str("main_window"), 
@@ -36,15 +34,11 @@ impl AppHandler {
                         stats_page.as_stats_page().set_loading_status(cx, "正在计算...");
                     }
                 }
-                let _ = dispatcher.dispatch_blocking(move || {
-                    analyze_meal(text);
-                });
+                analyze_meal(text);
             }
             AppAction::SaveConfig(text) => {
                 let text = text.clone();
-                let _ = dispatcher.dispatch_blocking(move || {
-                    save_config(text);
-                });
+                save_config(text);
             }
             _ => (),
         }

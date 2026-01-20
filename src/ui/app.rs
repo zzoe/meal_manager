@@ -1,7 +1,6 @@
 use crate::services::{MealAnalysisResult, load_config};
 use crate::ui::layout::app_shell::{AppAction, AppShellWidgetRefExt};
 use crate::ui::handlers::AppHandler;
-use compio::dispatcher::Dispatcher;
 use makepad_widgets::*;
 
 
@@ -39,8 +38,6 @@ app_main!(App);
 pub struct App {
     #[live]
     ui: WidgetRef,
-    #[rust(Dispatcher::new().unwrap())]
-    dispatcher: Dispatcher,
     #[rust(Vec::new())]
     precompile_queue: Vec<String>,
     #[rust(None)]
@@ -85,11 +82,9 @@ impl App {
 
 impl MatchEvent for App {
     fn handle_startup(&mut self, cx: &mut Cx) {
-        // 应用启动时异步加载配置
-        let _ = self.dispatcher.dispatch_blocking(move || {
-            load_config();
-            println!("config loaded")
-        });
+        // 应用启动时加载配置
+        load_config();
+        println!("config loaded");
         
         // 初始化预编译队列（包含所有页面）
         // 注意：stats页是默认页，但为了完整性也加入队列
@@ -103,7 +98,7 @@ impl MatchEvent for App {
                 let act = widget_action.cast::<AppAction>();
                 match act {
                     AppAction::None => (),
-                    _ => AppHandler::handle_ui_action(cx, &act, &self.ui, &self.dispatcher),
+                    _ => AppHandler::handle_ui_action(cx, &act, &self.ui),
                 }
             }
 

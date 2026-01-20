@@ -8,7 +8,6 @@ edition = "2024"
 # makepad-widgets = "*"
 makepad-widgets = { git = "https://github.com/makepad/makepad", branch = "rik" }
 # 异步运行时
-compio = { version = "*", features = ["dispatcher","runtime"] }
 # 本地数据库
 redb = "*"
 # 序列化
