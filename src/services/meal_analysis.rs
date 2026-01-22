@@ -1,29 +1,15 @@
-use crate::storage::{DatabaseConnection, format_employee_config, parse_employee_config};
 use crate::domain::Employee;
+use crate::services::backend_result::BackendResult;
+use crate::storage::DatabaseConnection;
 use fastant::Instant;
-use makepad_widgets::{Cx, DefaultNone, ActionDefaultRef};
+use makepad_widgets::Cx;
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
 
-#[derive(Clone, Debug, DefaultNone)]
-pub enum MealAnalysisResult {
-    Success {
-        lunch_summary: String,
-        lunch_details: String,
-        dinner_summary: String,
-        dinner_details: String,
-        exception_summary: String,
-        exception_details: String,
-    },
-    ConfigLoaded(String),
-    ConfigSaved,
-    None,
-}
-
-pub struct MealAnalyzer;
+struct MealAnalyzer;
 
 impl MealAnalyzer {
-    pub fn analyze(input_text: String) -> MealAnalysisResult {
+    pub fn analyze(input_text: String) -> BackendResult {
         let employees = DatabaseConnection::load_employees();
         let alias_map = Self::build_alias_map(&employees);
 
@@ -77,10 +63,15 @@ impl MealAnalyzer {
         lunch_list.sort();
         dinner_list.sort();
 
-        let exception_details = Self::build_exception_details(&employees, &reported_names, &unknown_people, &error_lines);
+        let exception_details = Self::build_exception_details(
+            &employees,
+            &reported_names,
+            &unknown_people,
+            &error_lines,
+        );
 
-        MealAnalysisResult::Success {
-            lunch_summary: format!("🍱 中餐 ({}份)", total_lunch),
+        BackendResult::AnalysisComplete {
+            lunch_summary: format!("🍱 中餐 ({}份+工作组2份)", total_lunch),
             lunch_details: if lunch_list.is_empty() {
                 "无".to_string()
             } else {
@@ -127,7 +118,11 @@ impl MealAnalyzer {
             .collect();
 
         if !missing.is_empty() {
-            lines.push(format!("未报餐 ({}人): {}", missing.len(), missing.join("、")));
+            lines.push(format!(
+                "未报餐 ({}人): {}",
+                missing.len(),
+                missing.join("、")
+            ));
         }
 
         if !unknown_people.is_empty() {
@@ -144,21 +139,19 @@ pub fn analyze_meal(input_text: String) {
     let start = Instant::now();
     let result = MealAnalyzer::analyze(input_text);
 
-    if let MealAnalysisResult::Success { ref lunch_summary, ref dinner_summary, .. } = result {
-        println!("统计完成 | {} | {} | 耗时: {:?}", lunch_summary, dinner_summary, start.elapsed());
+    if let BackendResult::AnalysisComplete {
+        ref lunch_summary,
+        ref dinner_summary,
+        ..
+    } = result
+    {
+        println!(
+            "统计完成 | {} | {} | 耗时: {:?}",
+            lunch_summary,
+            dinner_summary,
+            start.elapsed()
+        );
     }
 
     Cx::post_action(result);
-}
-
-pub fn load_config() {
-    let list = DatabaseConnection::load_employees();
-    let text = format_employee_config(&list);
-    Cx::post_action(MealAnalysisResult::ConfigLoaded(text));
-}
-
-pub fn save_config(text: String) {
-    let list = parse_employee_config(&text);
-    let _ = DatabaseConnection::save_employees(list);
-    Cx::post_action(MealAnalysisResult::ConfigSaved);
 }

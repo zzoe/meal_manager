@@ -1,5 +1,5 @@
-pub mod sidebar;
 pub mod app_shell;
+pub mod sidebar;
 
 use makepad_widgets::Cx;
 

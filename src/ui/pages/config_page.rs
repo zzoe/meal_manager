@@ -1,5 +1,5 @@
+use crate::services::save_config;
 use makepad_widgets::*;
-use crate::ui::layout::app_shell::AppAction;
 
 live_design! {
     use link::widgets::*;
@@ -68,15 +68,11 @@ impl Widget for ConfigPage {
 
 impl WidgetMatchEvent for ConfigPage {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
-        let uid = self.widget_uid();
-
         if self.button(id!(btn_save_config)).clicked(actions) {
+            self.button(id!(btn_save_config)).set_disabled(cx, true);
+            // 获取配置文本并在后台线程保存
             let text = self.text_input(id!(config_input)).text();
-            cx.widget_action(
-                uid,
-                &HeapLiveIdPath::default(),
-                AppAction::SaveConfig(text),
-            );
+            cx.spawn_thread(move || save_config(text));
         }
     }
 }
@@ -87,6 +83,14 @@ impl ConfigPageRef {
             let input = inner.text_input(id!(config_input));
             input.set_text(cx, text);
             input.redraw(cx);
+        }
+    }
+
+    pub fn reset_btn_save_config(&self, cx: &mut Cx) {
+        if let Some(inner) = self.borrow() {
+            let btn = inner.button(id!(btn_save_config));
+            btn.set_disabled(cx, false);
+            btn.redraw(cx);
         }
     }
 }

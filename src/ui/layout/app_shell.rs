@@ -1,5 +1,5 @@
-use makepad_widgets::*;
 use fastant::Instant;
+use makepad_widgets::*;
 
 live_design! {
     use link::widgets::*;
@@ -36,15 +36,6 @@ live_design! {
     }
 }
 
-#[derive(Clone, Debug, DefaultNone)]
-pub enum AppAction {
-    NavigateToStats,
-    NavigateToConfig,
-    SubmitAnalysis(String),
-    SaveConfig(String),
-    None,
-}
-
 #[derive(Live, LiveHook, Widget)]
 pub struct AppShell {
     #[deref]
@@ -70,7 +61,10 @@ impl AppShellRef {
                 "config" => live_id!(config),
                 _ => live_id!(stats),
             };
-            inner.view(id!(navigation)).as_page_flip().set_active_page(cx, page_id);
+            inner
+                .view(id!(navigation))
+                .as_page_flip()
+                .set_active_page(cx, page_id);
         }
         println!("AppShell::show_page('{}')耗时: {:?}", page, start.elapsed());
     }

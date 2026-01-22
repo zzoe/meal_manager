@@ -5,9 +5,8 @@ edition = "2024"
 
 [dependencies]
 #ui
-# makepad-widgets = "*"
-makepad-widgets = { git = "https://github.com/makepad/makepad", branch = "rik" }
-# 异步运行时
+makepad-widgets = "*"
+# makepad-widgets = { git = "https://github.com/makepad/makepad", branch = "rik" }
 # 本地数据库
 redb = "*"
 # 序列化

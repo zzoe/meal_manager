@@ -1,5 +1,5 @@
+use crate::ui::app::AppAction;
 use makepad_widgets::*;
-use crate::ui::layout::app_shell::AppAction;
 
 live_design! {
     use link::widgets::*;

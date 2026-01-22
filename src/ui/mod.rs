@@ -1,9 +1,8 @@
 pub mod app;
+pub mod components;
+pub mod layout;
 pub mod pages;
 pub mod theme;
-pub mod layout;
-pub mod components;
-pub mod handlers;
 
 use makepad_widgets::Cx;
 

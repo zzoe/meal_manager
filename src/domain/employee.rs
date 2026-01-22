@@ -10,8 +10,4 @@ impl Employee {
     pub fn new(name: String, aliases: Vec<String>) -> Self {
         Self { name, aliases }
     }
-
-    pub fn has_alias(&self, alias: &str) -> bool {
-        self.name == alias || self.aliases.iter().any(|a| a == alias)
-    }
 }

@@ -1,5 +1,5 @@
+use crate::services::analyze_meal;
 use makepad_widgets::*;
-use crate::ui::layout::app_shell::AppAction;
 
 live_design! {
     use link::widgets::*;
@@ -60,7 +60,7 @@ live_design! {
             width: Fill, height: Fill
             flow: Down, spacing: 10.0
 
-            // 1. 🍱 中餐 (x份)
+            // 1. 🍱 中餐 (x份+工作组2份)
             <View> {
                 width: Fill, height: Fill,
                 lunch_card = <ResultCard> {
@@ -115,15 +115,15 @@ impl Widget for StatsPage {
 
 impl WidgetMatchEvent for StatsPage {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
-        let uid = self.widget_uid();
-
         if self.button(id!(btn_run)).clicked(actions) {
+            // 更新按钮文本为加载状态
+            self.button(id!(btn_run)).set_text(cx, "正在计算...");
+            self.button(id!(btn_run)).set_disabled(cx, true);
+            self.button(id!(btn_run)).redraw(cx);
+
+            // 获取输入文本并在后台线程执行分析
             let text = self.text_input(id!(input_box)).text();
-            cx.widget_action(
-                uid,
-                &HeapLiveIdPath::default(),
-                AppAction::SubmitAnalysis(text),
-            );
+            cx.spawn_thread(move || analyze_meal(text));
         }
     }
 }
@@ -160,20 +160,9 @@ impl StatsPageRef {
                 .label(id!(exception_card.content_view.content))
                 .set_text(cx, exception_details);
 
-            inner.redraw(cx);
-        }
-    }
-
-    pub fn reset_loading_status(&self, cx: &mut Cx) {
-        if let Some(mut inner) = self.borrow_mut() {
             inner.button(id!(btn_run)).set_text(cx, "开始分析");
-            inner.redraw(cx);
-        }
-    }
+            inner.button(id!(btn_run)).set_disabled(cx, false);
 
-    pub fn set_loading_status(&self, cx: &mut Cx, msg: &str) {
-        if let Some(mut inner) = self.borrow_mut() {
-            inner.button(id!(btn_run)).set_text(cx, msg);
             inner.redraw(cx);
         }
     }
