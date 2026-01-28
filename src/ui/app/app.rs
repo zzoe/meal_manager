@@ -44,12 +44,8 @@ app_main!(App);
 pub struct App {
     #[live]
     ui: WidgetRef,
-    #[rust(Vec::new())]
+    #[rust(vec!["stats".to_string(),"config".to_string()])]
     precompile_queue: Vec<String>,
-    #[rust(None)]
-    current_precompile_page: Option<String>,
-    #[rust(0)]
-    precompile_frames_remaining: i32,
 }
 
 impl LiveRegister for App {
@@ -59,43 +55,10 @@ impl LiveRegister for App {
     }
 }
 
-impl App {
-    fn start_next_precompile(&mut self, cx: &mut Cx) {
-        if let Some(page) = self.precompile_queue.pop() {
-            self.current_precompile_page = Some(page.clone());
-            // 切换到该页面以触发GPU编译
-            let app_shell = self
-                .ui
-                .widget(&[LiveId::from_str("main_window"), LiveId::from_str("body")])
-                .as_app_shell();
-            app_shell.show_page(cx, &page);
-            println!("开始预编译页面: {}", page);
-            // 保持5帧以提供足够的GPU编译时间（经验值）
-            self.precompile_frames_remaining = 5;
-            cx.new_next_frame();
-        } else {
-            // 所有页面预编译完成，确保回到默认页（stats）
-            let app_shell = self
-                .ui
-                .widget(&[LiveId::from_str("main_window"), LiveId::from_str("body")])
-                .as_app_shell();
-            app_shell.show_page(cx, "stats");
-            self.current_precompile_page = None;
-            println!("所有页面预编译完成");
-        }
-    }
-}
-
 impl MatchEvent for App {
     fn handle_startup(&mut self, cx: &mut Cx) {
         // 应用启动时异步加载配置
         cx.spawn_thread(load_config);
-        println!("config loading started");
-
-        // 初始化预编译队列（包含所有页面）
-        // 注意：stats页是默认页，但为了完整性也加入队列
-        self.precompile_queue = vec!["stats".to_string(), "config".to_string()];
-        self.start_next_precompile(cx);
     }
 
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
@@ -117,16 +80,15 @@ impl MatchEvent for App {
     }
 
     fn handle_next_frame(&mut self, cx: &mut Cx, _e: &NextFrameEvent) {
-        if self.precompile_frames_remaining > 0 {
-            self.precompile_frames_remaining -= 1;
-            if self.precompile_frames_remaining == 0 {
-                // 当前页面编译完成，开始下一个
-                println!("页面预编译完成: {:?}", self.current_precompile_page);
-                self.start_next_precompile(cx);
-            } else {
-                // 继续等待下一帧
-                cx.new_next_frame();
-            }
+        if let Some(page) = self.precompile_queue.pop() {
+            // 切换到该页面以触发GPU编译
+            println!("开始预编译页面: {}", page);
+            let app_shell = self
+                .ui
+                .widget(&[LiveId::from_str("main_window"), LiveId::from_str("body")])
+                .as_app_shell();
+            app_shell.show_page(cx, &page);
+            cx.new_next_frame();
         }
     }
 }

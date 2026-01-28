@@ -1,6 +1,5 @@
 use crate::ui::app::AppAction;
 use crate::ui::layout::app_shell::AppShellWidgetRefExt;
-use fastant::Instant;
 use makepad_widgets::*;
 
 pub fn handle_ui_action(cx: &mut Cx, action: &AppAction, ui: &WidgetRef) {
@@ -13,9 +12,7 @@ pub fn handle_ui_action(cx: &mut Cx, action: &AppAction, ui: &WidgetRef) {
             app_shell.show_page(cx, "stats");
         }
         AppAction::NavigateToConfig => {
-            let start = Instant::now();
             app_shell.show_page(cx, "config");
-            println!("切换到配置页耗时: {:?}", start.elapsed());
         }
         _ => (),
     }

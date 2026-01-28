@@ -2,7 +2,6 @@ use crate::services::BackendResult;
 use crate::ui::layout::app_shell::AppShellWidgetRefExt;
 use crate::ui::pages::config_page::ConfigPageWidgetRefExt;
 use crate::ui::pages::stats_page::StatsPageWidgetRefExt;
-use fastant::Instant;
 use makepad_widgets::{Cx, LiveId, PageFlipWidgetRefExt, ViewWidgetRefExt, WidgetRef, id, live_id};
 
 pub fn handle_backend_result(cx: &mut Cx, result: &BackendResult, ui: &WidgetRef) {
@@ -33,14 +32,12 @@ pub fn handle_backend_result(cx: &mut Cx, result: &BackendResult, ui: &WidgetRef
             }
         }
         BackendResult::ConfigLoaded(text) => {
-            let start = Instant::now();
             if let Some(mut page_flip) = app_shell.view(id!(navigation)).as_page_flip().borrow_mut()
             {
                 if let Some(config_page) = page_flip.page(cx, live_id!(config)) {
                     config_page.as_config_page().set_config_text(cx, text);
                 }
             }
-            println!("ConfigLoaded处理耗时: {:?}", start.elapsed());
         }
         BackendResult::ConfigSaved => {
             if let Some(mut page_flip) = app_shell.view(id!(navigation)).as_page_flip().borrow_mut()
