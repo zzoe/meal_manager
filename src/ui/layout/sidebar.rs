@@ -23,7 +23,7 @@ live_design! {
             width: Fill, height: Fit
             flow: Down, spacing: 5.0
 
-            btn_nav_stats = <NavButton> { text: "数据统计" }
+            btn_nav_stats = <NavButton> { text: "报餐统计" }
             btn_nav_config = <NavButton> { text: "人员配置" }
         }
     }
@@ -50,7 +50,7 @@ impl Widget for Sidebar {
 
 impl WidgetMatchEvent for Sidebar {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
-        // 折叠按钮处理 - 在组件内部处理
+        // 折叠按钮处理
         if self.button(id!(btn_toggle)).clicked(actions) {
             self.collapsed = !self.collapsed;
 
@@ -65,7 +65,7 @@ impl WidgetMatchEvent for Sidebar {
             self.redraw(cx);
         }
 
-        // 导航按钮处理 - 发送事件给父组件
+        // 导航按钮处理
         let uid = self.widget_uid();
         if self.button(id!(btn_nav_stats)).clicked(actions) {
             cx.widget_action(uid, &HeapLiveIdPath::default(), AppAction::NavigateToStats);

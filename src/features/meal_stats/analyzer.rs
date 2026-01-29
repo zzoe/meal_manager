@@ -1,6 +1,6 @@
-use crate::domain::Employee;
-use crate::services::backend_result::BackendResult;
-use crate::storage::DatabaseConnection;
+use crate::features::employees::Employee;
+use crate::features::employees::storage::EmployeeStorage;
+use crate::features::meal_stats::MealAnalysisAction;
 use fastant::Instant;
 use makepad_widgets::Cx;
 use regex::Regex;
@@ -9,8 +9,8 @@ use std::collections::{HashMap, HashSet};
 struct MealAnalyzer;
 
 impl MealAnalyzer {
-    pub fn analyze(input_text: String) -> BackendResult {
-        let employees = DatabaseConnection::load_employees();
+    pub fn analyze(input_text: String) -> MealAnalysisAction {
+        let employees = EmployeeStorage::load_employees();
         let alias_map = Self::build_alias_map(&employees);
 
         let re = Regex::new(r"^(.*?)[：:\s]+(\d{2})").unwrap();
@@ -70,7 +70,7 @@ impl MealAnalyzer {
             &error_lines,
         );
 
-        BackendResult::AnalysisComplete {
+        MealAnalysisAction::AnalysisComplete {
             lunch_summary: format!("🍱 中餐 ({}份+工作组2份)", total_lunch),
             lunch_details: if lunch_list.is_empty() {
                 "无".to_string()
@@ -139,7 +139,7 @@ pub fn analyze_meal(input_text: String) {
     let start = Instant::now();
     let result = MealAnalyzer::analyze(input_text);
 
-    if let BackendResult::AnalysisComplete {
+    if let MealAnalysisAction::AnalysisComplete {
         ref lunch_summary,
         ref dinner_summary,
         ..

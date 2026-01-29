@@ -5,9 +5,9 @@ live_design! {
     use link::widgets::*;
     use link::theme::*;
     use crate::ui::components::common::*;
-    use crate::ui::layout::sidebar::*;
-    use crate::ui::pages::stats_page::*;
-    use crate::ui::pages::config_page::*;
+    use crate::ui::layout::sidebar::Sidebar;
+    use crate::ui::pages::meal_stats::StatsPage;
+    use crate::ui::pages::employees::page::ConfigPage;
 
     pub AppShell = {{AppShell}} {
         width: Fill, height: Fill
@@ -16,23 +16,30 @@ live_design! {
         // --- 左侧：侧边栏 ---
         sidebar = <Sidebar> {}
 
-            // --- 右侧：工作区 ---
-            content_container = <View> {
+        // --- 右侧：工作区 ---
+        content_container = <View> {
+            width: Fill, height: Fill
+            show_bg: true, draw_bg: { color: (COLOR_BG_APP) }
+
+            // 使用 PageFlip 进行页面切换
+            navigation = <PageFlip> {
                 width: Fill, height: Fill
-                show_bg: true, draw_bg: { color: (COLOR_BG_APP) }
+                active_page: stats
 
-                // 使用 PageFlip 进行页面切换
-                navigation = <PageFlip> {
-                    width: Fill, height: Fill
-                    active_page: stats
+                // 页面 1: 统计页
+                stats = <StatsPage> {}
 
-                    // 页面 1: 统计页
-                    stats = <StatsPage> {}
-
-                    // 页面 2: 配置页
-                    config = <ConfigPage> {}
-                }
+                // 页面 2: 配置页
+                config = <ConfigPage> {}
             }
+        }
+
+        // 使用绝对定位的 View 包裹各种弹窗
+        modal_view = <View> {
+            abs_pos: vec2(0, 0)
+            width: Fill, height: Fill
+            error_modal = <ErrorModal> {}
+        }
     }
 }
 
@@ -45,10 +52,19 @@ pub struct AppShell {
 impl Widget for AppShell {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.view.handle_event(cx, event, scope);
+        self.widget_match_event(cx, event, scope);
     }
 
     fn draw_walk(&mut self, cx: &mut Cx2d, scope: &mut Scope, walk: Walk) -> DrawStep {
         self.view.draw_walk(cx, scope, walk)
+    }
+}
+
+impl WidgetMatchEvent for AppShell {
+    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
+        if self.button(id!(modal_view.error_modal.content.ok_btn)).clicked(actions) {
+            self.modal(id!(modal_view.error_modal)).close(cx);
+        }
     }
 }
 
@@ -67,5 +83,13 @@ impl AppShellRef {
                 .set_active_page(cx, page_id);
         }
         println!("AppShell::show_page('{}')耗时: {:?}", page, start.elapsed());
+    }
+
+    pub fn show_error(&self, cx: &mut Cx, msg: &str) {
+        if let Some(inner) = self.borrow() {
+            let modal = inner.modal(id!(modal_view.error_modal));
+            modal.label(id!(content.message)).set_text(cx, msg);
+            modal.open(cx);
+        }
     }
 }

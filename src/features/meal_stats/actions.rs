@@ -1,7 +1,7 @@
 use makepad_widgets::{ActionDefaultRef, DefaultNone};
 
 #[derive(Clone, Debug, DefaultNone)]
-pub enum BackendResult {
+pub enum MealAnalysisAction {
     AnalysisComplete {
         lunch_summary: String,
         lunch_details: String,
@@ -10,7 +10,5 @@ pub enum BackendResult {
         exception_summary: String,
         exception_details: String,
     },
-    ConfigLoaded(String),
-    ConfigSaved,
     None,
 }

@@ -1,5 +1,7 @@
-use crate::app::{handle_backend_result, handle_ui_action};
-use crate::services::{BackendResult, load_config};
+use crate::employees::load_config;
+use crate::ui::app::backend_handler::handle_backend_result;
+use crate::ui::app::ui_handler::handle_ui_action;
+use crate::ui::pages::employees::page::ConfigPageAction;
 use crate::ui::layout::app_shell::AppShellWidgetRefExt;
 use makepad_widgets::*;
 
@@ -19,7 +21,7 @@ live_design! {
         ui: <Root> {
             main_window = <Window> {
                 window: {inner_size: vec2(1000, 600)},
-                pass: {clear_color: #F2E6D8}
+                pass: {clear_color: #F9FAFB}
 
                 caption_bar = {
                     visible: true,
@@ -44,14 +46,14 @@ app_main!(App);
 pub struct App {
     #[live]
     ui: WidgetRef,
-    #[rust(vec!["stats".to_string(),"config".to_string()])]
-    precompile_queue: Vec<String>,
 }
 
 impl LiveRegister for App {
     fn live_register(cx: &mut Cx) {
+        println!("App::live_register start");
         makepad_widgets::live_design(cx);
         crate::ui::register_live_design(cx);
+        println!("App::live_register end");
     }
 }
 
@@ -69,26 +71,17 @@ impl MatchEvent for App {
                     AppAction::None => (),
                     _ => handle_ui_action(cx, &act, &self.ui),
                 }
+
+                let config_act = widget_action.cast::<ConfigPageAction>();
+                match config_act {
+                    ConfigPageAction::ValidationError(msg) => {
+                        self.ui.as_app_shell().show_error(cx, &msg);
+                    }
+                    _ => ()
+                }
             }
 
-            let result = makepad_widgets::ActionCast::<BackendResult>::cast(action);
-            match result {
-                BackendResult::None => (),
-                _ => handle_backend_result(cx, &result, &self.ui),
-            }
-        }
-    }
-
-    fn handle_next_frame(&mut self, cx: &mut Cx, _e: &NextFrameEvent) {
-        if let Some(page) = self.precompile_queue.pop() {
-            // 切换到该页面以触发GPU编译
-            println!("开始预编译页面: {}", page);
-            let app_shell = self
-                .ui
-                .widget(&[LiveId::from_str("main_window"), LiveId::from_str("body")])
-                .as_app_shell();
-            app_shell.show_page(cx, &page);
-            cx.new_next_frame();
+            handle_backend_result(cx, actions, &self.ui);
         }
     }
 }

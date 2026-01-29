@@ -1,52 +1,67 @@
-use crate::services::BackendResult;
+use crate::employees::EmployeeAction;
+use crate::meal_stats::MealAnalysisAction;
 use crate::ui::layout::app_shell::AppShellWidgetRefExt;
-use crate::ui::pages::config_page::ConfigPageWidgetRefExt;
-use crate::ui::pages::stats_page::StatsPageWidgetRefExt;
-use makepad_widgets::{Cx, LiveId, PageFlipWidgetRefExt, ViewWidgetRefExt, WidgetRef, id, live_id};
+use crate::ui::pages::employees::page::ConfigPageWidgetRefExt;
+use crate::ui::pages::meal_stats::StatsPageWidgetRefExt;
+use makepad_widgets::{
+    Actions, Cx, LiveId, PageFlipWidgetRefExt, ViewWidgetRefExt, WidgetRef, id, live_id,
+};
 
-pub fn handle_backend_result(cx: &mut Cx, result: &BackendResult, ui: &WidgetRef) {
+pub fn handle_backend_result(cx: &mut Cx, actions: &Actions, ui: &WidgetRef) {
     let app_shell = ui.widget(&[LiveId::from_str("body")]).as_app_shell();
 
-    match result {
-        BackendResult::AnalysisComplete {
-            lunch_summary,
-            lunch_details,
-            dinner_summary,
-            dinner_details,
-            exception_summary,
-            exception_details,
-        } => {
-            if let Some(mut page_flip) = app_shell.view(id!(navigation)).as_page_flip().borrow_mut()
-            {
-                if let Some(stats_page) = page_flip.page(cx, live_id!(stats)) {
-                    stats_page.as_stats_page().update_results(
-                        cx,
-                        lunch_summary,
-                        lunch_details,
-                        dinner_summary,
-                        dinner_details,
-                        exception_summary,
-                        exception_details,
-                    );
+    for action in actions {
+        if let Some(result) = action.downcast_ref::<MealAnalysisAction>() {
+            match result {
+                MealAnalysisAction::AnalysisComplete {
+                    lunch_summary,
+                    lunch_details,
+                    dinner_summary,
+                    dinner_details,
+                    exception_summary,
+                    exception_details,
+                } => {
+                    let nav_ref = app_shell.view(id!(navigation)).as_page_flip();
+                    if let Some(mut nav) = nav_ref.borrow_mut() {
+                        if let Some(stats_page) = nav.page(cx, live_id!(stats)) {
+                            stats_page.as_stats_page().update_results(
+                                cx,
+                                &lunch_summary,
+                                &lunch_details,
+                                &dinner_summary,
+                                &dinner_details,
+                                &exception_summary,
+                                &exception_details,
+                            );
+                        }
+                    }
                 }
+                MealAnalysisAction::None => {}
             }
         }
-        BackendResult::ConfigLoaded(text) => {
-            if let Some(mut page_flip) = app_shell.view(id!(navigation)).as_page_flip().borrow_mut()
-            {
-                if let Some(config_page) = page_flip.page(cx, live_id!(config)) {
-                    config_page.as_config_page().set_config_text(cx, text);
+
+        if let Some(result) = action.downcast_ref::<EmployeeAction>() {
+            match result {
+                EmployeeAction::Loaded(employees) => {
+                    let nav_ref = app_shell.view(id!(navigation)).as_page_flip();
+                    if let Some(mut nav) = nav_ref.borrow_mut() {
+                        if let Some(config_page) = nav.page(cx, live_id!(config)) {
+                            config_page
+                                .as_config_page()
+                                .set_employees(cx, employees.to_vec());
+                        }
+                    }
                 }
+                EmployeeAction::Saved => {
+                    let nav_ref = app_shell.view(id!(navigation)).as_page_flip();
+                    if let Some(mut nav) = nav_ref.borrow_mut() {
+                        if let Some(_config_page) = nav.page(cx, live_id!(config)) {
+                            // config_page.as_config_page().reset_btn_save_config(cx);
+                        }
+                    }
+                }
+                EmployeeAction::None => {}
             }
         }
-        BackendResult::ConfigSaved => {
-            if let Some(mut page_flip) = app_shell.view(id!(navigation)).as_page_flip().borrow_mut()
-            {
-                if let Some(config_page) = page_flip.page(cx, live_id!(config)) {
-                    config_page.as_config_page().reset_btn_save_config(cx);
-                }
-            }
-        }
-        BackendResult::None => {}
     }
 }
