@@ -37,20 +37,20 @@ live_design! {
                 width: Fill, height: Fill
                 flow: Down, margin: { top: 10.0 }
                 draw_bg: {
-                    color: #fff
-                    border_color: #000
+                    color: #FFFFFF
+                    border_color: #000000
                     border_size: 0.3
                     border_radius: 4.0
                 }
-                
+
                 <ScrollYView> {
                     width: Fill, height: Fill
-                    
+
                     input = <TextInput> {
                         width: Fill, height: Fit
                         padding: 15.0
                         empty_text: "此处粘贴点餐内容，例如:\nzoe: 11\n小明: 01...\n\n\n\n\n\n\n\n"
-                        
+
                         draw_bg: {
                             color: #FFFFFF
                             color_empty: #FFFFFF

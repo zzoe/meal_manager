@@ -2,9 +2,9 @@ name: Rust CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 env:
   CARGO_TERM_COLOR: always
@@ -21,10 +21,24 @@ jobs:
         platform:
           - os-name: Linux
             runs-on: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            run_tests: true
+          - os-name: Linux
+            runs-on: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            run_tests: false
           - os-name: Windows
             runs-on: windows-latest
+            target: x86_64-pc-windows-msvc
+            run_tests: true
           - os-name: macOS
             runs-on: macos-latest
+            target: x86_64-apple-darwin
+            run_tests: true
+          - os-name: WASM
+            runs-on: ubuntu-latest
+            target: wasm32-unknown-unknown
+            run_tests: false
 
     runs-on: ${{ matrix.platform.runs-on }}
 
@@ -48,12 +62,26 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform.target }}
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
 
-      - name: Build
-        run: MAKEPAD=lines cargo +nightly build --verbose
+      - name: Build (try cargo-makepad first, fallback to cargo)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Prefer cargo-makepad if available (it may provide Makepad-specific packaging)
+          if command -v cargo-makepad >/dev/null 2>&1 || cargo makepad --version >/dev/null 2>&1; then
+            echo "cargo-makepad available, attempting 'cargo makepad build'..."
+            MAKEPAD=lines cargo makepad build --target ${{ matrix.platform.target }} || echo "cargo makepad build failed; will fallback to cargo"
+          else
+            echo "cargo-makepad not found, using regular cargo build"
+          fi
+          # Fallback to canonical cargo build (this will fail the job on error)
+          MAKEPAD=lines cargo +nightly build --target ${{ matrix.platform.target }} --verbose
 
       - name: Run tests
+        if: ${{ matrix.platform.target != 'aarch64-unknown-linux-gnu' && !contains(matrix.platform.target, 'wasm32') }}
         run: MAKEPAD=lines cargo +nightly test --verbose

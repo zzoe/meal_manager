@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
 
 env:
   CARGO_INCREMENTAL: 0
@@ -18,15 +18,40 @@ jobs:
           - os-name: Linux
             runs-on: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            binary-name: meal_manager
+          - os-name: Linux
+            runs-on: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+          - os-name: Linux
+            runs-on: ubuntu-latest
+            target: x86_64-unknown-linux-musl
           - os-name: Windows
             runs-on: windows-latest
             target: x86_64-pc-windows-msvc
+            binary-name: meal_manager.exe
+          - os-name: Windows
+            runs-on: windows-latest
+            target: aarch64-pc-windows-msvc
             binary-name: meal_manager.exe
           - os-name: macOS
             runs-on: macos-latest
             target: x86_64-apple-darwin
             binary-name: meal_manager
+          - os-name: macOS
+            runs-on: macos-latest
+            target: aarch64-apple-darwin
+            binary-name: meal_manager
+          - os-name: iOS
+            runs-on: macos-latest
+            target: aarch64-apple-ios
+            binary-name: meal_manager
+          - os-name: Android
+            runs-on: ubuntu-latest
+            target: aarch64-linux-android
+            binary-name: meal_manager
+          - os-name: WASM
+            runs-on: ubuntu-latest
+            target: wasm32-unknown-unknown
+            binary-name: meal_manager.wasm
 
     runs-on: ${{ matrix.platform.runs-on }}
 
@@ -39,6 +64,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
+            build-essential \
             pkg-config \
             libwayland-dev \
             libxkbcommon-dev \
@@ -46,7 +72,32 @@ jobs:
             libvulkan-dev \
             libx11-dev \
             libasound2-dev \
-            libfontconfig1-dev
+            libfontconfig1-dev \
+            musl-tools \
+            gcc-aarch64-linux-gnu \
+            binutils-aarch64-linux-gnu \
+            ca-certificates
+
+      - name: Install Android SDK & NDK (best-effort)
+        if: matrix.platform.os-name == 'Android'
+        run: |
+          # Quick install of Java and unzip for SDK tools
+          sudo apt-get update
+          sudo apt-get install -y openjdk-11-jdk unzip curl
+          export ANDROID_SDK_ROOT=$HOME/Android/Sdk
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          cd /tmp
+          # Try download the command line tools (versioned URL may change over time)
+          curl -sS -o cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip || true
+          unzip -q cmdline-tools.zip -d $ANDROID_SDK_ROOT/cmdline-tools || true
+          # Ensure the cmdline-tools are available under 'latest'
+          mv $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools $ANDROID_SDK_ROOT/cmdline-tools/latest || true
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$PATH
+          yes | sdkmanager --licenses || true
+          # Install platform tools and an NDK (best-effort; versions may need tuning)
+          sdkmanager "platform-tools" "platforms;android-31" "ndk;25.2.9519653" || true
+          # Install cargo-ndk helper to help building libraries if available
+          cargo install cargo-ndk || true
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -56,19 +107,114 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
 
-      - name: Build
-        run: MAKEPAD=lines cargo +nightly build --release --target ${{ matrix.platform.target }}
+      - name: Install wasm tools (WASM)
+        if: contains(matrix.platform.target, 'wasm32')
+        run: |
+          cargo install -f wasm-bindgen-cli || true
+
+      - name: Build (try cargo-makepad first, fallback to cargo)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Prefer cargo-makepad if available (it may provide Makepad-specific multi-platform packaging)
+          if command -v cargo-makepad >/dev/null 2>&1 || cargo makepad --version >/dev/null 2>&1; then
+            echo "cargo-makepad available, attempting 'cargo makepad build'..."
+            MAKEPAD=lines cargo makepad build --release --target ${{ matrix.platform.target }} || echo "cargo makepad build failed; will fallback to cargo"
+          else
+            echo "cargo-makepad not found, using regular cargo build"
+          fi
+          # Fallback to canonical cargo build (this will fail the job on error)
+          MAKEPAD=lines cargo +nightly build --release --target ${{ matrix.platform.target }}
 
       - name: Package
         shell: bash
         run: |
+          set -e
           mkdir -p release
-          if [ "${{ matrix.platform.os-name }}" = "Windows" ]; then
-            cp target/${{ matrix.platform.target }}/release/${{ matrix.platform.binary-name }} release/
-            cd release && zip ../meal_manager-${{ matrix.platform.target }}.zip *
-          else
-            cp target/${{ matrix.platform.target }}/release/${{ matrix.platform.binary-name }} release/
-            cd release && tar czf ../meal_manager-${{ matrix.platform.target }}.tar.gz *
+
+          # If Cargo.toml contains a [package.metadata.packager] section, prefer cargo-packager
+          if grep -q '^\[package\.metadata\.packager\]' Cargo.toml; then
+            echo "Detected packager config in Cargo.toml — attempting cargo-packager flow"
+
+            # Install packager tools (best-effort)
+            cargo install cargo-packager --locked || echo "cargo-packager install failed or already installed"
+            cargo install --version 0.2.0 --locked --git https://github.com/project-robius/robius-packaging-commands.git robius-packaging-commands || echo "robius-packaging-commands install failed or already installed"
+
+            # Run cargo packager (try the canonical cargo invocation)
+            if command -v cargo-packager >/dev/null 2>&1 || cargo packager --version >/dev/null 2>&1; then
+              echo "Running: cargo packager --release"
+              cargo packager --release || echo "cargo packager failed; falling back to manual packaging"
+            else
+              echo "cargo packager not available after install attempt; falling back"
+            fi
+
+            # If packager produced a dist/ directory, collect artifacts
+            if [ -d dist ]; then
+              echo "Packaging produced dist/; copying into release/"
+              mkdir -p release/dist
+              cp -r dist/* release/dist/ || true
+            else
+              echo "No dist/ produced by packager; will fall back to manual packaging"
+              # Fall through to manual packaging below
+              PACKAGER_FALLBACK=1
+            fi
+          fi
+
+          # If packager was not used or failed to produce outputs, do the old manual packaging per-target
+          if [ -z "${PACKAGER_FALLBACK:-}" ]; then
+            # If dist artifacts exist, prefer those as final artifacts
+            if [ -d release/dist ]; then
+              echo "Created release/dist artifacts; also creating a zip of release/dist"
+              cd release && tar czf ../meal_manager-${{ matrix.platform.target }}-dist.tar.gz dist || true
+            else
+              # Fallback manual packaging (existing behavior)
+              case "${{ matrix.platform.target }}" in
+                *wasm32*)
+                  # Prefer makepad-wasm-app output if present (contains index.html, *.wasm, JS, resources)
+                  WASM_DIR=$(ls -d target/makepad-wasm-app/release/* 2>/dev/null | head -n 1 || true)
+                  if [ -n "${WASM_DIR}" ] && [ -d "${WASM_DIR}" ]; then
+                    echo "Found makepad wasm app output at: ${WASM_DIR}"
+                    WASM_NAME=$(basename "${WASM_DIR}")
+                    mkdir -p release/${WASM_NAME}
+                    cp -r "${WASM_DIR}"/* release/${WASM_NAME}/ || true
+                    cd release && zip -r ../meal_manager-${{ matrix.platform.target }}.zip ${WASM_NAME} || true
+                  else
+                    # Fallback to raw wasm binary (or wasm-bindgen output)
+                    if ls target/${{ matrix.platform.target }}/release/*.wasm >/dev/null 2>&1; then
+                      cp target/${{ matrix.platform.target }}/release/*.wasm release/ || true
+                      # Include any JS glue if present
+                      if [ -d pkg ]; then cp -r pkg/* release/ || true; fi
+                      cd release && zip -r ../meal_manager-${{ matrix.platform.target }}.zip * || true
+                    else
+                      cp target/${{ matrix.platform.target }}/release/${{ matrix.platform.binary-name }} release/ || true
+                      cd release && zip -r ../meal_manager-${{ matrix.platform.target }}.zip *
+                    fi
+                  fi
+                  ;;
+                *linux-android*)
+                  # Android: attempt to package any produced binaries/libs
+                  cp target/${{ matrix.platform.target }}/release/* release/ || true
+                  cd release && zip -r ../meal_manager-${{ matrix.platform.target }}.zip *
+                  ;;
+                *pc-windows-msvc*|*windows*)
+                  cp target/${{ matrix.platform.target }}/release/${{ matrix.platform.binary-name }} release/
+                  cd release && zip ../meal_manager-${{ matrix.platform.target }}.zip *
+                  ;;
+                *apple-ios*)
+                  # iOS: attempt to package built artifacts for iOS (arm64)
+                  cp target/${{ matrix.platform.target }}/release/* release/ || true
+                  cd release && zip -r ../meal_manager-${{ matrix.platform.target }}.zip *
+                  ;;
+                *apple-darwin*)
+                  cp target/${{ matrix.platform.target }}/release/${{ matrix.platform.binary-name }} release/
+                  cd release && zip ../meal_manager-${{ matrix.platform.target }}.zip *
+                  ;;
+                *)
+                  cp target/${{ matrix.platform.target }}/release/${{ matrix.platform.binary-name }} release/ || true
+                  cd release && tar czf ../meal_manager-${{ matrix.platform.target }}.tar.gz *
+                  ;;
+              esac
+            fi
           fi
 
       - name: Upload Artifact
@@ -78,10 +224,126 @@ jobs:
           path: |
             meal_manager-*.zip
             meal_manager-*.tar.gz
+            meal_manager-*.wasm
+            meal_manager-*.wasm.zip
+            meal_manager-*-dist.tar.gz
+            dist/**
+
+  ios-libs:
+    name: Build iOS libraries (cargo-lipo)
+    runs-on: macos-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install iOS Rust targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,x86_64-apple-ios
+
+      - name: Build iOS (try cargo-makepad first, fallback to cargo-lipo)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Detect package name
+          PKG_NAME=$(cargo metadata --format-version=1 --no-deps | sed -n 's/.*"name": *"\([^"]*\)".*/\1/p' | head -n 1)
+          if command -v cargo-makepad >/dev/null 2>&1 || cargo makepad --version >/dev/null 2>&1; then
+            echo "cargo-makepad found: attempting Makepad iOS build"
+            cargo makepad apple ios install-toolchain || true
+            # Try well-known cargo-makepad build commands (falling back to run-sim which usually builds artifacts)
+            if cargo makepad apple ios build -p "$PKG_NAME" --release >/dev/null 2>&1; then
+              echo "cargo-makepad apple ios build succeeded"
+            elif cargo makepad apple ios run-sim -p "$PKG_NAME" --release >/dev/null 2>&1; then
+              echo "cargo-makepad apple ios run-sim succeeded (build artifacts produced)"
+            else
+              echo "cargo-makepad iOS build attempts failed, falling back to cargo-lipo"
+              cargo install -f cargo-lipo || true
+              cargo lipo --release || true
+            fi
+          else
+            echo "cargo-makepad not available, building with cargo-lipo"
+            cargo install -f cargo-lipo || true
+            cargo lipo --release || true
+          fi
+
+      - name: Package iOS libs
+        shell: bash
+        run: |
+          mkdir -p release/ios
+          # Prefer Makepad-produced app artifacts if present
+          MAKEPAD_APP_DIR=$(ls -d target/makepad-apple-app/*/release 2>/dev/null | head -n 1 || true)
+          if [ -n "$MAKEPAD_APP_DIR" ] && [ -d "$MAKEPAD_APP_DIR" ]; then
+            echo "Copying Makepad iOS app artifacts from: $MAKEPAD_APP_DIR"
+            cp -r "$MAKEPAD_APP_DIR"/* release/ios/ || true
+          else
+            cp target/universal-apple-ios/release/*.a release/ios/ || true
+          fi
+          cd release && tar czf ../meal_manager-ios-universal.tar.gz ios
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: meal_manager-ios
+          path: meal_manager-ios-universal.tar.gz
+
+  android-libs:
+    name: Build Android libraries (cargo-ndk, best-effort)
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Android Rust targets
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,x86_64-linux-android,armv7-linux-androideabi,i686-linux-android
+
+      - name: Build Android (try cargo-makepad first, fallback to cargo-ndk)
+        shell: bash
+        run: |
+          set -euo pipefail
+          PKG_NAME=$(cargo metadata --format-version=1 --no-deps | sed -n 's/.*"name": *"\([^"]*\)".*/\1/p' | head -n 1)
+          if command -v cargo-makepad >/dev/null 2>&1 || cargo makepad --version >/dev/null 2>&1; then
+            echo "cargo-makepad found: using cargo-makepad android build"
+            cargo makepad android install-toolchain || true
+            if cargo makepad android build -p "$PKG_NAME" --release >/dev/null 2>&1; then
+              echo "cargo-makepad android build succeeded"
+            else
+              echo "cargo-makepad android build failed; attempting cargo-ndk fallback"
+              cargo install -f cargo-ndk || true
+              cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 -t x86 --release build || true
+            fi
+          else
+            echo "cargo-makepad not available; using cargo-ndk"
+            cargo install -f cargo-ndk || true
+            cargo ndk -t arm64-v8a -t armeabi-v7a -t x86_64 -t x86 --release build || true
+          fi
+
+      - name: Package Android libs
+        shell: bash
+        run: |
+          mkdir -p release/android
+          # Prefer Makepad APK outputs if present
+          MAKEPAD_ANDROID_DIR=$(ls -d target/makepad-android-app/* 2>/dev/null | head -n 1 || true)
+          if [ -n "$MAKEPAD_ANDROID_DIR" ] && [ -d "$MAKEPAD_ANDROID_DIR" ]; then
+            echo "Copying Makepad Android outputs from: $MAKEPAD_ANDROID_DIR"
+            cp -r "$MAKEPAD_ANDROID_DIR"/* release/android/ || true
+          else
+            cp target/*-linux-android/release/*.so release/android/ || true
+          fi
+          cd release && tar czf ../meal_manager-android-libs.tar.gz android
+
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: meal_manager-android
+          path: meal_manager-android-libs.tar.gz
 
   release:
     name: Create Release
-    needs: build
+    needs: [build, ios-libs, android-libs]
     runs-on: ubuntu-latest
     steps:
       - name: Download Artifacts
@@ -94,8 +356,16 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
+          # Include generated artifacts from manual packaging and cargo-packager 'dist' outputs
           files: |
             artifacts/meal_manager-*.zip
             artifacts/meal_manager-*.tar.gz
+            artifacts/meal_manager-*.wasm
+            artifacts/meal_manager-*.wasm.zip
+            artifacts/meal_manager-ios-universal.tar.gz
+            artifacts/meal_manager-android-libs.tar.gz
+            artifacts/meal_manager-*-dist.tar.gz
+            artifacts/dist/**
+            artifacts/**
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
