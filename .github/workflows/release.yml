@@ -28,10 +28,7 @@ jobs:
             runs-on: windows-latest
             target: x86_64-pc-windows-msvc
             binary-name: meal_manager.exe
-          - os-name: Windows
-            runs-on: windows-latest
-            target: aarch64-pc-windows-msvc
-            binary-name: meal_manager.exe
+          # removed aarch64-pc-windows-msvc entry (problematic on CI; re-add when cross-linker support is validated)
           - os-name: macOS
             runs-on: macos-latest
             target: x86_64-apple-darwin
@@ -44,10 +41,7 @@ jobs:
             runs-on: macos-latest
             target: aarch64-apple-ios
             binary-name: meal_manager
-          - os-name: Android
-            runs-on: ubuntu-latest
-            target: aarch64-linux-android
-            binary-name: meal_manager
+          # removed Android binary target (use android-libs job to produce Android libraries instead)
           - os-name: WASM
             runs-on: ubuntu-latest
             target: wasm32-unknown-unknown
