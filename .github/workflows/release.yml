@@ -111,6 +111,14 @@ jobs:
         run: |
           cargo install -f wasm-bindgen-cli || true
 
+      - name: Install cargo-makepad (non-Windows, best-effort)
+        if: matrix.platform.os-name != 'Windows'
+        run: |
+          set -euo pipefail
+          echo "Installing cargo-makepad (dev branch) - best-effort"
+          # Install cargo-makepad from the Makepad repo (dev branch); don't fail the job if install fails.
+          cargo install --force --git https://github.com/makepad/makepad.git --branch dev cargo-makepad || true
+
       - name: Ensure Rust targets exist for stable & nightly
         shell: bash
         run: |
@@ -128,10 +136,21 @@ jobs:
           MAKEPAD: lines
         run: |
           set -euo pipefail
-          echo "Building for target: ${{ matrix.platform.target }} on ${{ matrix.platform.os-name }}"
+          TARGET="${{ matrix.platform.target }}"
+          LOGFILE="build-${TARGET}.log"
+          echo "Building for target: ${TARGET} on ${{ matrix.platform.os-name }}" | tee -a "$LOGFILE"
+
+          # Helper to run a command and tee output to the logfile while preserving the real exit code.
+          run_and_log() {
+            echo "\$ $*" | tee -a "$LOGFILE"
+            set -o pipefail
+            "$@" 2>&1 | tee -a "$LOGFILE"
+            return ${PIPESTATUS[0]}
+          }
+
           # On Linux runners, ensure suitable cross-linkers are selected for targets that need them.
           if [[ "${{ matrix.platform.os-name }}" == "Linux" ]]; then
-            echo "Configuring per-target cargo linker settings for Linux"
+            echo "Configuring per-target cargo linker settings for Linux" | tee -a "$LOGFILE"
             mkdir -p ~/.cargo
             # Write a minimal cargo config to select the appropriate linker for common cross targets.
             printf '%s\n' '[target.aarch64-unknown-linux-gnu]' 'linker = "aarch64-linux-gnu-gcc"' '' '[target.x86_64-unknown-linux-musl]' 'linker = "musl-gcc"' > ~/.cargo/config
@@ -139,19 +158,27 @@ jobs:
             export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
             export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc
           fi
+
           # Prefer cargo-makepad if available (it may provide Makepad-specific multi-platform packaging)
           if command -v cargo-makepad >/dev/null 2>&1; then
-            echo "cargo-makepad available, attempting 'cargo makepad build'..."
-            if cargo makepad build --release --target ${{ matrix.platform.target }}; then
-              echo "cargo-makepad build succeeded"
+            echo "cargo-makepad available, attempting 'cargo makepad build'..." | tee -a "$LOGFILE"
+            if run_and_log cargo makepad build --release --target "${TARGET}"; then
+              echo "cargo-makepad build succeeded" | tee -a "$LOGFILE"
             else
-              echo "cargo-makepad build failed; falling back to 'cargo build'"
-              cargo build --release --target ${{ matrix.platform.target }}
+              echo "cargo-makepad build failed; falling back to 'cargo build'" | tee -a "$LOGFILE"
+              run_and_log cargo build --release --target "${TARGET}"
             fi
           else
-            echo "cargo-makepad not found, using regular cargo build"
-            cargo build --release --target ${{ matrix.platform.target }}
+            echo "cargo-makepad not found, using regular cargo build" | tee -a "$LOGFILE"
+            run_and_log cargo build --release --target "${TARGET}"
           fi
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log-${{ matrix.platform.target }}
+          path: build-${{ matrix.platform.target }}.log
 
       - name: Package
         shell: bash
