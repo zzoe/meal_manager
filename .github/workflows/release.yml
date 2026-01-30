@@ -156,9 +156,10 @@ jobs:
           fi
 
           # Desktop targets: use regular cargo build. Use cargo-makepad only for mobile/wasm targets
-          if [[ "${TARGET}" == *wasm32* || "${TARGET}" == *apple-ios* || "${TARGET}" == *linux-android* ]]; then
+          # For desktop targets prefer the standard cargo build; avoid running generic 'cargo makepad build' (prints help)
+          if [[ "${TARGET}" == *apple-ios* || "${TARGET}" == *linux-android* ]]; then
             if command -v cargo-makepad >/dev/null 2>&1; then
-              echo "cargo-makepad available and target looks like mobile/wasm; attempting 'cargo makepad build'..." | tee -a "$LOGFILE"
+              echo "cargo-makepad available and target looks like mobile; attempting 'cargo makepad build'..." | tee -a "$LOGFILE"
               if run_and_log cargo makepad build --release --target "${TARGET}"; then
                 echo "cargo-makepad build succeeded" | tee -a "$LOGFILE"
               else
@@ -166,11 +167,11 @@ jobs:
                 run_and_log cargo build --release --target "${TARGET}"
               fi
             else
-              echo "cargo-makepad not found; using regular cargo build for mobile/wasm target" | tee -a "$LOGFILE"
+              echo "cargo-makepad not found; using regular cargo build for mobile target" | tee -a "$LOGFILE"
               run_and_log cargo build --release --target "${TARGET}"
             fi
           else
-            echo "Desktop target detected; using regular cargo build" | tee -a "$LOGFILE"
+            echo "Desktop/wasm target detected; using regular cargo build" | tee -a "$LOGFILE"
             run_and_log cargo build --release --target "${TARGET}"
           fi
 
