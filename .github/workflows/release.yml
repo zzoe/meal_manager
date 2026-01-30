@@ -71,7 +71,9 @@ jobs:
             libxcb1-dev \
             libvulkan-dev \
             libx11-dev \
+            libxcursor-dev \
             libasound2-dev \
+            libpulse-dev \
             libfontconfig1-dev \
             musl-tools \
             gcc-aarch64-linux-gnu \
@@ -114,17 +116,24 @@ jobs:
 
       - name: Build (try cargo-makepad first, fallback to cargo)
         shell: bash
+        env:
+          MAKEPAD: lines
         run: |
           set -euo pipefail
+          echo "Building for target: ${{ matrix.platform.target }} on ${{ matrix.platform.os-name }}"
           # Prefer cargo-makepad if available (it may provide Makepad-specific multi-platform packaging)
-          if command -v cargo-makepad >/dev/null 2>&1 || cargo makepad --version >/dev/null 2>&1; then
+          if command -v cargo-makepad >/dev/null 2>&1; then
             echo "cargo-makepad available, attempting 'cargo makepad build'..."
-            MAKEPAD=lines cargo makepad build --release --target ${{ matrix.platform.target }} || echo "cargo makepad build failed; will fallback to cargo"
+            if cargo makepad build --release --target ${{ matrix.platform.target }}; then
+              echo "cargo-makepad build succeeded"
+            else
+              echo "cargo-makepad build failed; falling back to 'cargo build'"
+              cargo build --release --target ${{ matrix.platform.target }}
+            fi
           else
             echo "cargo-makepad not found, using regular cargo build"
+            cargo build --release --target ${{ matrix.platform.target }}
           fi
-          # Fallback to canonical cargo build (this will fail the job on error)
-          MAKEPAD=lines cargo +nightly build --release --target ${{ matrix.platform.target }}
 
       - name: Package
         shell: bash
@@ -211,7 +220,7 @@ jobs:
                   ;;
                 *)
                   cp target/${{ matrix.platform.target }}/release/${{ matrix.platform.binary-name }} release/ || true
-                  cd release && tar czf ../meal_manager-${{ matrix.platform.target }}.tar.gz *
+                  cd release && tar czf ../meal_manager-${{ matrix.platform.target }}.tar.gz * || true
                   ;;
               esac
             fi
