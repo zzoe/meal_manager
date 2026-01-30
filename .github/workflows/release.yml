@@ -114,6 +114,17 @@ jobs:
         run: |
           cargo install -f wasm-bindgen-cli || true
 
+      - name: Ensure Rust targets exist for stable & nightly
+        shell: bash
+        run: |
+          set -euo pipefail
+          TARGET="${{ matrix.platform.target }}"
+          echo "Ensuring rustup targets for both stable and nightly: ${TARGET}"
+          # Install nightly toolchain and ensure the requested target exists for both stable and nightly.
+          rustup toolchain install nightly || true
+          rustup target add --toolchain stable "${TARGET}" || true
+          rustup target add --toolchain nightly "${TARGET}" || true
+
       - name: Build (try cargo-makepad first, fallback to cargo)
         shell: bash
         env:
