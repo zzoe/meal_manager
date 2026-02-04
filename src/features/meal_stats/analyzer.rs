@@ -25,7 +25,7 @@ pub fn analyze(input_text: String) -> MealAnalysisAction {
 
             if let Some(standard_name) = alias_map.get(raw_name) {
                 let chars: Vec<char> = code.chars().collect();
-                let lunch = chars.get(0).and_then(|c| c.to_digit(10)).unwrap_or(0);
+                let lunch = chars.first().and_then(|c| c.to_digit(10)).unwrap_or(0);
                 let dinner = chars.get(1).and_then(|c| c.to_digit(10)).unwrap_or(0);
                 valid_data_map.insert(standard_name.clone(), (lunch, dinner, code.to_string()));
             } else {

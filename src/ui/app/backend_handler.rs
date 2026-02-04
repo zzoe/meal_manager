@@ -13,27 +13,12 @@ pub fn handle_backend_result(cx: &mut Cx, actions: &Actions, ui: &WidgetRef) {
     for action in actions {
         if let Some(result) = action.downcast_ref::<MealAnalysisAction>() {
             match result {
-                MealAnalysisAction::AnalysisComplete {
-                    lunch_summary,
-                    lunch_details,
-                    dinner_summary,
-                    dinner_details,
-                    exception_summary,
-                    exception_details,
-                } => {
+                MealAnalysisAction::AnalysisComplete { .. } => {
                     let nav_ref = app_shell.view(id!(navigation)).as_page_flip();
-                    if let Some(mut nav) = nav_ref.borrow_mut() {
-                        if let Some(stats_page) = nav.page(cx, live_id!(stats)) {
-                            stats_page.as_stats_page().update_results(
-                                cx,
-                                &lunch_summary,
-                                &lunch_details,
-                                &dinner_summary,
-                                &dinner_details,
-                                &exception_summary,
-                                &exception_details,
-                            );
-                        }
+                    if let Some(mut nav) = nav_ref.borrow_mut()
+                        && let Some(stats_page) = nav.page(cx, live_id!(stats))
+                    {
+                        stats_page.as_stats_page().update_results(cx, result);
                     }
                 }
                 MealAnalysisAction::None => {}
@@ -44,20 +29,20 @@ pub fn handle_backend_result(cx: &mut Cx, actions: &Actions, ui: &WidgetRef) {
             match result {
                 EmployeeAction::Loaded(employees) => {
                     let nav_ref = app_shell.view(id!(navigation)).as_page_flip();
-                    if let Some(mut nav) = nav_ref.borrow_mut() {
-                        if let Some(config_page) = nav.page(cx, live_id!(config)) {
-                            config_page
-                                .as_config_page()
-                                .set_employees(cx, employees.to_vec());
-                        }
+                    if let Some(mut nav) = nav_ref.borrow_mut()
+                        && let Some(config_page) = nav.page(cx, live_id!(config))
+                    {
+                        config_page
+                            .as_config_page()
+                            .set_employees(cx, employees.to_vec());
                     }
                 }
                 EmployeeAction::Saved => {
                     let nav_ref = app_shell.view(id!(navigation)).as_page_flip();
-                    if let Some(mut nav) = nav_ref.borrow_mut() {
-                        if let Some(_config_page) = nav.page(cx, live_id!(config)) {
-                            // config_page.as_config_page().reset_btn_save_config(cx);
-                        }
+                    if let Some(mut nav) = nav_ref.borrow_mut()
+                        && let Some(_config_page) = nav.page(cx, live_id!(config))
+                    {
+                        // config_page.as_config_page().reset_btn_save_config(cx);
                     }
                 }
                 EmployeeAction::None => {}

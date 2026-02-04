@@ -111,8 +111,6 @@ live_design! {
         }
     }
 
-
-
     // 蓝色按钮
     pub BlueButton = <Button> {
         width: Fill, height: 48.0
@@ -135,10 +133,6 @@ live_design! {
         }
     }
 
-
-
-
-
     // 带样式的输入框 (用于表格或卡片)
     pub StyledTextInput = <TextInput> {
         width: Fill, height: Fit
@@ -155,8 +149,6 @@ live_design! {
         }
         draw_selection: { color: #BFDBFEFF }
     }
-
-
 
     // 行操作按钮 (透明背景 + 无边框)
     pub RowSaveButton = <Button> {
@@ -196,7 +188,7 @@ live_design! {
 
         content = <View> {
             width: Fill, height: Fill
-            show_bg: true, draw_bg: { color: #00000006 }
+            show_bg: true, draw_bg: { color: #00000000 }
             // 使用对齐而不是坐标偏移，确保渲染稳定
             align: {x: 0.5, y: 0.5}
 
@@ -205,7 +197,7 @@ live_design! {
                 flow: Down, spacing: 20.0, padding: 25.0
 
                 draw_bg: {
-                    color: (COLOR_BG_CARD)
+                    color: #FF0000FF
                     border_radius: 12.0
                     border_color: (COLOR_BORDER)
                     border_size: 1.0

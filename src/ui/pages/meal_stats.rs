@@ -1,3 +1,4 @@
+use crate::features::meal_stats::MealAnalysisAction;
 use crate::meal_stats::analyzer;
 use makepad_widgets::*;
 
@@ -148,26 +149,26 @@ impl WidgetMatchEvent for StatsPage {
 }
 
 impl StatsPageRef {
-    pub fn update_results(
-        &self,
-        cx: &mut Cx,
-        lunch_title: &str,
-        lunch_details: &str,
-        dinner_title: &str,
-        dinner_details: &str,
-        exception_title: &str,
-        exception_details: &str,
-    ) {
-        if let Some(mut inner) = self.borrow_mut() {
+    pub fn update_results(&self, cx: &mut Cx, action: &MealAnalysisAction) {
+        if let MealAnalysisAction::AnalysisComplete {
+            lunch_summary,
+            lunch_details,
+            dinner_summary,
+            dinner_details,
+            exception_summary,
+            exception_details,
+        } = action
+            && let Some(mut inner) = self.borrow_mut()
+        {
             inner
                 .label(id!(lunch_card.header_slot.header_label))
-                .set_text(cx, lunch_title);
+                .set_text(cx, lunch_summary);
             inner
                 .label(id!(dinner_card.header_slot.header_label))
-                .set_text(cx, dinner_title);
+                .set_text(cx, dinner_summary);
             inner
                 .label(id!(exception_card.header_slot.header_label))
-                .set_text(cx, exception_title);
+                .set_text(cx, exception_summary);
 
             inner
                 .label(id!(lunch_card.content_view.content))

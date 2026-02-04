@@ -96,11 +96,9 @@ impl EmployeeStorage {
 
         let mut list = Vec::new();
         if let Ok(iter) = table.iter() {
-            for item in iter {
-                if let Ok((_, v)) = item {
-                    if let Ok(emp) = serde_json::from_str::<Employee>(v.value()) {
-                        list.push(emp);
-                    }
+            for (_, v) in iter.flatten() {
+                if let Ok(emp) = serde_json::from_str::<Employee>(v.value()) {
+                    list.push(emp);
                 }
             }
         }

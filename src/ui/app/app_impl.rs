@@ -59,6 +59,10 @@ impl MatchEvent for App {
     fn handle_startup(&mut self, cx: &mut Cx) {
         // 应用启动时异步加载配置
         cx.spawn_thread(load_config);
+        
+        // 启动时直接显示Modal用于测试
+        println!("App startup: showing test modal");
+        self.ui.as_app_shell().show_error(cx, "启动测试：Modal应该可见");
     }
 
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
@@ -71,12 +75,9 @@ impl MatchEvent for App {
                 }
 
                 let config_act = widget_action.cast::<ConfigPageAction>();
-                match config_act {
-                    ConfigPageAction::ValidationError(msg) => {
-                        println!("ConfigPageAction::ValidationError({msg})");
-                        self.ui.as_app_shell().show_error(cx, &msg);
-                    }
-                    _ => (),
+                if let ConfigPageAction::ValidationError(msg) = config_act {
+                    println!("ConfigPageAction::ValidationError({msg})");
+                    self.ui.as_app_shell().show_error(cx, &msg);
                 }
             }
 

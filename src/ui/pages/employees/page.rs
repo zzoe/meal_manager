@@ -160,7 +160,7 @@ impl Widget for ConfigPage {
 }
 
 impl WidgetMatchEvent for ConfigPage {
-    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
+    fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
         // 刷新按钮
         if self.button(id!(btn_refresh)).clicked(actions) {
             log!("ConfigPage: Refreshing employees...");
@@ -193,7 +193,7 @@ impl WidgetMatchEvent for ConfigPage {
                         if name.is_empty() {
                             cx.widget_action(
                                 self.widget_uid(),
-                                &scope.path,
+                                &HeapLiveIdPath::default(),
                                 ConfigPageAction::ValidationError("姓名不能为空".to_string()),
                             );
                             return;
@@ -208,7 +208,7 @@ impl WidgetMatchEvent for ConfigPage {
                         {
                             cx.widget_action(
                                 self.widget_uid(),
-                                &scope.path,
+                                &HeapLiveIdPath::default(),
                                 ConfigPageAction::ValidationError(format!(
                                     "员工姓名 '{}' 已存在",
                                     name
