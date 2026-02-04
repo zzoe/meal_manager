@@ -24,13 +24,30 @@ jobs:
         with:
           components: rustfmt, clippy
 
-      - name: Rustfmt
+      - name: Install Linux build dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libasound2-dev \
+            libgl1-mesa-dev \
+            libudev-dev \
+            libx11-dev \
+            libxkbcommon-dev \
+            libxi-dev \
+            libxrandr-dev \
+            pkg-config
+
+      - name: Rustfmt (Linux only)
+        if: matrix.os == 'ubuntu-latest'
         run: cargo fmt --all -- --check
 
-      - name: Clippy
+      - name: Clippy (Linux only)
+        if: matrix.os == 'ubuntu-latest'
         run: cargo clippy --all-targets --all-features -- -D warnings
 
-      - name: Tests
+      - name: Tests (Linux only)
+        if: matrix.os == 'ubuntu-latest'
         run: cargo test --all
 
       - name: Build (release)
