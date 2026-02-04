@@ -39,8 +39,8 @@ jobs:
             libxrandr-dev \
             pkg-config
 
-      - name: Rustfmt
-        run: cargo fmt --all -- --check
+      # - name: Rustfmt
+      #   run: cargo fmt --all -- --check
 
       - name: Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings

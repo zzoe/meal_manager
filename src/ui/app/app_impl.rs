@@ -59,10 +59,6 @@ impl MatchEvent for App {
     fn handle_startup(&mut self, cx: &mut Cx) {
         // 应用启动时异步加载配置
         cx.spawn_thread(load_config);
-        
-        // 启动时直接显示Modal用于测试
-        println!("App startup: showing test modal");
-        self.ui.as_app_shell().show_error(cx, "启动测试：Modal应该可见");
     }
 
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {

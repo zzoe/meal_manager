@@ -40,8 +40,11 @@ live_design! {
 
         // 使用绝对定位的 View 包裹各种弹窗
         modal_view = <View> {
-            abs_pos: vec2(0, 0)
             width: Fill, height: Fill
+            flow: Overlay
+            show_bg: true
+            draw_bg: { color: #00000000 }
+
             error_modal = <ErrorModal> {}
         }
     }
@@ -98,7 +101,7 @@ impl AppShellRef {
                 println!("modal_view obtained: {:?}", modal_view);
                 modal_view.set_visible(cx, true);
                 println!("modal_view visibility set to true");
-                
+
                 let modal = inner.modal(id!(modal_view.error_modal));
                 println!("modal obtained: {:?}", modal);
                 modal
