@@ -6,9 +6,19 @@ on:
   pull_request:
     branches: ["main"]
 
+concurrency:
+  group: rust-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  MAKEPAD: lines
+
 jobs:
   build:
     name: Build & Test - ${{ matrix.platform.os-name }} / ${{ matrix.platform.target }}
+    runs-on: ${{ matrix.platform.runs-on }}
     strategy:
       fail-fast: false
       matrix:
@@ -42,18 +52,11 @@ jobs:
             target: wasm32-unknown-unknown
             run_tests: false
 
-    runs-on: ${{ matrix.platform.runs-on }}
-
-    env:
-      CARGO_TERM_COLOR: always
-      CARGO_INCREMENTAL: 0
-      MAKEPAD: lines
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install dependencies (Linux)
+      - name: Install Linux dependencies
         if: matrix.platform.os-name == 'Linux'
         shell: bash
         run: |
@@ -79,7 +82,7 @@ jobs:
             binutils-aarch64-linux-gnu \
             ca-certificates
 
-      - name: Install Rust (stable) and requested target
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.platform.target }}
@@ -87,133 +90,35 @@ jobs:
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
 
-      - name: Install wasm tools (WASM)
+      - name: Install wasm-bindgen (WASM)
         if: contains(matrix.platform.target, 'wasm32')
         shell: bash
         run: |
           set -euo pipefail
           cargo install -f wasm-bindgen-cli || true
 
-      - name: Install cargo-makepad (non-Windows, best-effort)
-        if: matrix.platform.os-name != 'Windows'
+      - name: Configure cross-linkers (Linux)
+        if: matrix.platform.os-name == 'Linux'
         shell: bash
         run: |
           set -euo pipefail
-          echo "Installing cargo-makepad (dev branch) - best-effort"
-          cargo install --force --git https://github.com/makepad/makepad.git --branch dev cargo-makepad || true
+          mkdir -p ~/.cargo
+          printf '%s\n' \
+            '[target.aarch64-unknown-linux-gnu]' 'linker = "aarch64-linux-gnu-gcc"' '' \
+            '[target.x86_64-unknown-linux-musl]' 'linker = "musl-gcc"' \
+            > ~/.cargo/config
+          export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
+          export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc
 
-      - name: Ensure Rust targets exist for stable & nightly (Unix)
-        if: matrix.platform.os-name != 'Windows'
+      - name: Build
         shell: bash
         run: |
           set -euo pipefail
-          TARGET="${{ matrix.platform.target }}"
-          echo "Ensuring rustup targets for both stable and nightly: ${TARGET}"
-          rustup toolchain install nightly || true
-          rustup target add --toolchain stable "${TARGET}" || true
-          rustup target add --toolchain nightly "${TARGET}" || true
+          cargo build --release --target "${{ matrix.platform.target }}"
 
-      - name: Ensure Rust targets exist for stable & nightly (Windows)
-        if: matrix.platform.os-name == 'Windows'
-        shell: pwsh
-        run: |
-          $target = '${{ matrix.platform.target }}'
-          Write-Host "Ensuring rustup targets for both stable and nightly: $target"
-          try { rustup toolchain install nightly } catch { Write-Host 'install nightly failed' }
-          try { rustup target add --toolchain stable $target } catch { Write-Host 'target add stable failed' }
-          try { rustup target add --toolchain nightly $target } catch { Write-Host 'target add nightly failed' }
-
-      - name: Build (Unix)
-        if: matrix.platform.os-name != 'Windows'
-        shell: bash
-        env:
-          MAKEPAD: lines
-        run: |
-          set -euo pipefail
-          TARGET="${{ matrix.platform.target }}"
-          LOGFILE="build-${TARGET}.log"
-          echo "Building for target: ${TARGET} on ${{ matrix.platform.os-name }}" | tee -a "$LOGFILE"
-
-          # Helper that logs commands and preserves exit code
-          run_and_log() {
-            echo "\$ $*" | tee -a "$LOGFILE"
-            set -o pipefail
-            "$@" 2>&1 | tee -a "$LOGFILE"
-            return ${PIPESTATUS[0]}
-          }
-
-          # Configure per-target linkers for common cross targets on Linux
-          if [[ "${{ matrix.platform.os-name }}" == "Linux" ]]; then
-            echo "Configuring per-target cargo linker settings for Linux" | tee -a "$LOGFILE"
-            mkdir -p ~/.cargo
-            printf '%s\n' \
-              '[target.aarch64-unknown-linux-gnu]' 'linker = "aarch64-linux-gnu-gcc"' '' \
-              '[target.x86_64-unknown-linux-musl]' 'linker = "musl-gcc"' \
-              > ~/.cargo/config
-            export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc
-            export CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc
-          fi
-
-          # Prefer cargo-makepad when available (Makepad packaging helpers)
-          # Prefer plain 'cargo build' for desktop targets (Linux/macOS/Windows).
-          # Use cargo-makepad only for mobile/wasm-like targets where it provides toolchain helpers.
-          if [[ "${TARGET}" == *wasm32* || "${TARGET}" == *apple-ios* || "${TARGET}" == *linux-android* ]]; then
-            if command -v cargo-makepad >/dev/null 2>&1; then
-              echo "cargo-makepad available and target looks like mobile/wasm; attempting 'cargo makepad build'..." | tee -a "$LOGFILE"
-              if run_and_log cargo makepad build --release --target "${TARGET}"; then
-                echo "cargo-makepad build succeeded" | tee -a "$LOGFILE"
-              else
-                echo "cargo-makepad build failed; falling back to 'cargo build'" | tee -a "$LOGFILE"
-                run_and_log cargo build --release --target "${TARGET}"
-              fi
-            else
-              echo "cargo-makepad not found; using regular cargo build for mobile/wasm target" | tee -a "$LOGFILE"
-              run_and_log cargo build --release --target "${TARGET}"
-            fi
-          else
-            echo "Desktop target detected; using regular cargo build" | tee -a "$LOGFILE"
-            run_and_log cargo build --release --target "${TARGET}"
-          fi
-
-      - name: Build (Windows)
-        if: matrix.platform.os-name == 'Windows'
-        shell: pwsh
-        env:
-          MAKEPAD: lines
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $target = '${{ matrix.platform.target }}'
-          $logfile = "build-$target.log"
-          Write-Host "Building for target: $target on Windows"
-
-          # On Windows, prefer plain 'cargo build' for desktop targets. Use cargo-makepad only for mobile/wasm.
-          if ($target -like '*wasm32*' -or $target -like '*apple-ios*' -or $target -like '*linux-android*') {
-            if (Get-Command cargo-makepad -ErrorAction SilentlyContinue) {
-              try {
-                cargo makepad build --release --target $target 2>&1 | Tee-Object -FilePath $logfile
-              } catch {
-                Write-Host 'cargo-makepad failed; falling back to cargo build'
-                cargo build --release --target $target 2>&1 | Tee-Object -FilePath $logfile
-              }
-            } else {
-              cargo build --release --target $target 2>&1 | Tee-Object -FilePath $logfile
-            }
-          } else {
-            Write-Host 'Desktop target detected: using cargo build'
-            cargo build --release --target $target 2>&1 | Tee-Object -FilePath $logfile
-          }
-
-      - name: Run tests
+      - name: Test
         if: ${{ matrix.platform.run_tests }}
         shell: bash
         run: |
           set -euo pipefail
-          echo "Running tests (if available for this target)"
           cargo test --verbose
-
-      - name: Upload build log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log-${{ matrix.platform.target }}
-          path: build-${{ matrix.platform.target }}.log
