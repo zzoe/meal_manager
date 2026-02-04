@@ -24,7 +24,7 @@ live_design! {
             flow: Down, spacing: 5.0
 
             btn_nav_stats = <NavButton> { text: "报餐统计" }
-            btn_nav_config = <NavButton> { text: "人员配置" }
+            btn_nav_config = <NavButton> { text: "员工登记" }
         }
     }
 }

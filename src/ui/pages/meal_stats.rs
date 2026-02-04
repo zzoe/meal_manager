@@ -1,4 +1,4 @@
-use crate::meal_stats::analyze_meal;
+use crate::meal_stats::analyzer;
 use makepad_widgets::*;
 
 live_design! {
@@ -19,28 +19,25 @@ live_design! {
             draw_bg: {
                 color: (COLOR_BG_CARD)
                 border_color: (COLOR_BORDER)
-                border_size: 1.0
+                border_size: 0.0
                 border_radius: 8.0
             }
 
-            <View> {
-                width: Fill, height: Fit
-                flow: Right, spacing: 10.0, align: {y: 0.5}
-                <Label> {
-                    text: "输入点餐数据"
-                    draw_text: { color: (COLOR_TEXT_PRIMARY), text_style: { font_size: 14.0 } }
-                }
+            <Label> {
+                text: "输入点餐数据"
+                draw_text: { color: (COLOR_TEXT_PRIMARY), text_style: { font_size: 14.0 } }
             }
 
             // 输入区域容器：固定边框和底色
-            input_container = <RoundedView> {
+            <RoundedView> {
                 width: Fill, height: Fill
                 flow: Down, margin: { top: 10.0 }
+                padding: 10.0
                 draw_bg: {
-                    color: #FFFFFF
-                    border_color: #000000
-                    border_size: 0.3
-                    border_radius: 4.0
+                    color: (COLOR_BG_CARD)
+                    border_color: (COLOR_BORDER)
+                    border_size: 1.0
+                    border_radius: 8.0
                 }
 
                 <ScrollYView> {
@@ -49,14 +46,15 @@ live_design! {
                     input = <TextInput> {
                         width: Fill, height: Fit
                         padding: 15.0
-                        empty_text: "此处粘贴点餐内容，例如:\nzoe: 11\n小明: 01...\n\n\n\n\n\n\n\n"
+                        empty_text: "此处粘贴点餐内容，例如:\nzoe: 11\n小明: 01..."
 
+                        // 背景交给外层 input_container，保持输入区透明以免覆盖边框
                         draw_bg: {
-                            color: #FFFFFF
-                            color_empty: #FFFFFF
-                            color_focus: #FFFFFF
-                            color_hover: #FFFFFF
-                            color_down: #FFFFFF
+                            color: #FFFFFFFF
+                            color_empty: #FFFFFFFF
+                            color_focus: #FFFFFFFF
+                            color_hover: #FFFFFFFF
+                            color_down: #FFFFFFFF
                             border_size: 0.0
                             border_radius: 4.0
                         }
@@ -71,13 +69,13 @@ live_design! {
                         }
 
                         draw_selection: {
-                            color: #BFDBFE
-                            color_focus: #BFDBFE
-                            color_hover: #BFDBFE
+                            color: #BFDBFEFF
+                            color_focus: #BFDBFEFF
+                            color_hover: #BFDBFEFF
                         }
 
                         draw_cursor: {
-                            color: #1E40AF
+                            color: #1E40AFFF
                         }
                     }
                 }
@@ -144,7 +142,7 @@ impl WidgetMatchEvent for StatsPage {
 
             // 获取输入文本并在后台线程执行分析
             let text = self.text_input(id!(input)).text();
-            cx.spawn_thread(move || analyze_meal(text));
+            cx.spawn_thread(move || Cx::post_action(analyzer::analyze(text)));
         }
     }
 }

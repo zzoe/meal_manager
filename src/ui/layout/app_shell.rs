@@ -1,4 +1,3 @@
-use fastant::Instant;
 use makepad_widgets::*;
 
 live_design! {
@@ -62,7 +61,10 @@ impl Widget for AppShell {
 
 impl WidgetMatchEvent for AppShell {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
-        if self.button(id!(modal_view.error_modal.content.ok_btn)).clicked(actions) {
+        if self
+            .button(id!(modal_view.error_modal.content.inner_content.ok_btn))
+            .clicked(actions)
+        {
             self.modal(id!(modal_view.error_modal)).close(cx);
         }
     }
@@ -70,7 +72,6 @@ impl WidgetMatchEvent for AppShell {
 
 impl AppShellRef {
     pub fn show_page(&self, cx: &mut Cx, page: &str) {
-        let start = Instant::now();
         if let Some(inner) = self.borrow() {
             let page_id = match page {
                 "stats" => live_id!(stats),
@@ -82,13 +83,12 @@ impl AppShellRef {
                 .as_page_flip()
                 .set_active_page(cx, page_id);
         }
-        println!("AppShell::show_page('{}')耗时: {:?}", page, start.elapsed());
     }
 
     pub fn show_error(&self, cx: &mut Cx, msg: &str) {
         if let Some(inner) = self.borrow() {
             let modal = inner.modal(id!(modal_view.error_modal));
-            modal.label(id!(content.message)).set_text(cx, msg);
+            modal.label(id!(content.inner_content.message)).set_text(cx, msg);
             modal.open(cx);
         }
     }

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-#ui
+# ui
 makepad-widgets = "*"
 # makepad-widgets = { git = "https://github.com/makepad/makepad", branch = "rik" }
 # 本地数据库
@@ -15,53 +15,3 @@ serde_json = "*"
 regex = "*"
 # 错误处理
 anyhow = "*"
-# 日期时间处理
-fastant = {version = "*"}
-
-[profile.dev]
-debug = 0
-incremental = true
-
-[profile.test]
-debug = 0
-incremental = true
-
-[package.metadata.packager]
-product_name = "MealManager"
-identifier = "com.zoe.meal-manager"
-authors = ["zoe"]
-description = "报餐数据统计工具"
-### 注意：`long_description` 的每行最多 80 个字符。
-# long_description = "..."
-# icons = ["./assets/icon.png"]
-out_dir = "./dist"
-# ... 其他打包选项，请查看 cargo-packager 文档了解更多详情。
-
-before-packaging-command = """
-robius-packaging-commands before-packaging \
-    --force-makepad \
-    --binary-name meal_manager \
-    --path-to-binary ./target/release/meal_manager
-"""
-
-# 我们需要指定将包含在包中的资源，打包器将把它们复制到输出目录。
-# 注意：如果您使用的是 Makepad v1.0 或更高版本，则需要指定更多资源文件：
-resources = [
-    ######### ⚠️ Makepad 自带的资源文件，当前情况下你同样需要导入 #########
-    { src = "./dist/resources/makepad_widgets", target = "makepad_widgets" },
-    { src = "./dist/resources/makepad_fonts_chinese_bold", target = "makepad_fonts_chinese_bold" },
-    { src = "./dist/resources/makepad_fonts_chinese_bold_2", target = "makepad_fonts_chinese_bold_2" },
-    { src = "./dist/resources/makepad_fonts_chinese_regular", target = "makepad_fonts_chinese_regular" },
-    { src = "./dist/resources/makepad_fonts_chinese_regular_2", target = "makepad_fonts_chinese_regular_2" },
-    { src = "./dist/resources/makepad_fonts_emoji", target = "makepad_fonts_emoji" },
-
-    ######### ⚠️ 此处是你自己项目中的资源文件 #########
-    # { src = "./dist/resources/you_app_resource", target = "you_app_resource" },
-]
-
-before-each-package-command = """
-robius-packaging-commands before-each-package \
-    --force-makepad \
-    --binary-name meal_manager \
-    --path-to-binary ./target/release/meal_manager \
-"""

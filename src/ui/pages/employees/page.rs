@@ -1,6 +1,8 @@
-use makepad_widgets::*;
-use crate::employees::{Employee, load_config, add_employee_config, update_employee_config, delete_employee_config};
 use super::config_item::*;
+use crate::employees::{
+    Employee, add_employee_config, delete_employee_config, load_config, update_employee_config,
+};
+use makepad_widgets::*;
 
 live_design! {
     use link::widgets::*;
@@ -11,20 +13,20 @@ live_design! {
     // 配置页面 - 使用PortalList实现虚拟滚动
     pub ConfigPage = {{ConfigPage}} {
         width: Fill, height: Fill
-        
+
         main_view = <View> {
             width: Fill, height: Fill
             flow: Down, spacing: 5.0, padding: 30.0
- 
+
             <View> {
                 width: Fill, height: Fit
                 flow: Right, align: {y: 0.5}
-                
+
                 <View> {
                     width: Fill, height: Fit
                     flow: Down, spacing: 2.0
                     <Label> {
-                        text: "员工配置"
+                        text: "员工登记"
                         draw_text: { color: (COLOR_TEXT_PRIMARY), text_style: { font_size: 18.0 } }
                     }
                 }
@@ -39,7 +41,7 @@ live_design! {
                         text_style: { font_size: 18.0 }
                     }
                     draw_bg: {
-                        color: #0000
+                        color: #FFFFFFFF
                         border_radius: 16.0
                         border_size: 0.0
                     }
@@ -49,13 +51,13 @@ live_design! {
             <View> {
                 width: Fill, height: Fill
                 flow: Down, spacing: 0.0, margin: { top: 10.0 }
-                
+
                 // 固定表头
                 <View> {
                     width: Fill, height: 35.0
                     flow: Right, spacing: 10.0, padding: {left: 15.0, right: 15.0}, align: {y: 0.5}
                     show_bg: true, draw_bg: { color: (COLOR_BG_APP) }
-                    
+
                     <Label> {
                         width: 40.0, text: "#"
                         draw_text: { color: (COLOR_TEXT_SECONDARY), text_style: { font_size: 10.0 } }
@@ -97,7 +99,7 @@ pub struct ConfigPage {
 
     #[rust]
     employees: Vec<Employee>,
-    
+
     #[rust]
     db_employees: Vec<Employee>,
 
@@ -127,11 +129,26 @@ impl Widget for ConfigPage {
                 if !employee_item.is_empty() {
                     if index < self.employees.len() {
                         // 传实时数据和对应的 DB 原始数据进行对比
-                        let original = self.db_employees.get(index).unwrap_or(&self.employees[index]);
-                        employee_item.set_employee(cx, index, &self.employees[index], original, false);
+                        let original = self
+                            .db_employees
+                            .get(index)
+                            .unwrap_or(&self.employees[index]);
+                        employee_item.set_employee(
+                            cx,
+                            index,
+                            &self.employees[index],
+                            original,
+                            false,
+                        );
                     } else {
                         // 最后一项是待填写的空行，从草稿箱中读取数据
-                        employee_item.set_employee(cx, index, &self.draft_new_employee, &Employee::new(String::new(), Vec::new()), true);
+                        employee_item.set_employee(
+                            cx,
+                            index,
+                            &self.draft_new_employee,
+                            &Employee::new(String::new(), Vec::new()),
+                            true,
+                        );
                     }
                     widget.draw_all(cx, scope);
                 }
@@ -152,18 +169,21 @@ impl WidgetMatchEvent for ConfigPage {
 
         // 处理行动作
         for action in actions {
-            if let Some(item_action) = action.as_widget_action().map(|wa| wa.cast::<EmployeeConfigItemAction>()) {
+            if let Some(item_action) = action
+                .as_widget_action()
+                .map(|wa| wa.cast::<EmployeeConfigItemAction>())
+            {
                 match item_action {
                     EmployeeConfigItemAction::Delete(index) => {
                         if index < self.employees.len() {
                             let employee = self.employees.remove(index);
                             self.db_employees.remove(index);
                             log!("ConfigPage: Deleting employee {}", employee.name);
-                            
+
                             // 仅删除该行数据
                             let name = employee.name.clone();
                             cx.spawn_thread(move || delete_employee_config(name));
-                            
+
                             self.view.redraw(cx);
                         }
                     }
@@ -171,18 +191,36 @@ impl WidgetMatchEvent for ConfigPage {
                         // 1. 数据清理与校验
                         let name = employee.name.trim().to_string();
                         if name.is_empty() {
-                            cx.widget_action(self.widget_uid(), &scope.path, ConfigPageAction::ValidationError("姓名不能为空".to_string()));
+                            cx.widget_action(
+                                self.widget_uid(),
+                                &scope.path,
+                                ConfigPageAction::ValidationError("姓名不能为空".to_string()),
+                            );
                             return;
                         }
 
                         // 检查重名 (排除自身)
-                        if self.employees.iter().enumerate().any(|(i, emp)| i != index && emp.name == name) {
-                            cx.widget_action(self.widget_uid(), &scope.path, ConfigPageAction::ValidationError(format!("员工姓名 '{}' 已存在", name)));
+                        if self
+                            .employees
+                            .iter()
+                            .enumerate()
+                            .any(|(i, emp)| i != index && emp.name == name)
+                        {
+                            cx.widget_action(
+                                self.widget_uid(),
+                                &scope.path,
+                                ConfigPageAction::ValidationError(format!(
+                                    "员工姓名 '{}' 已存在",
+                                    name
+                                )),
+                            );
                             return;
                         }
 
                         // 昵称去重逻辑
-                        let mut aliases: Vec<String> = employee.aliases.iter()
+                        let mut aliases: Vec<String> = employee
+                            .aliases
+                            .iter()
                             .map(|s| s.trim().to_string())
                             .filter(|s| !s.is_empty())
                             .collect();
@@ -199,8 +237,12 @@ impl WidgetMatchEvent for ConfigPage {
                             let old_name = self.db_employees[index].name.clone();
                             self.employees[index] = cleaned_employee.clone();
                             self.db_employees[index] = cleaned_employee.clone();
-                            log!("ConfigPage: Updating employee {} (old: {})", cleaned_employee.name, old_name);
-                            
+                            log!(
+                                "ConfigPage: Updating employee {} (old: {})",
+                                cleaned_employee.name,
+                                old_name
+                            );
+
                             // 仅修改该行数据
                             let new_emp = cleaned_employee.clone();
                             cx.spawn_thread(move || update_employee_config(old_name, new_emp));
@@ -212,12 +254,12 @@ impl WidgetMatchEvent for ConfigPage {
                             self.draft_new_employee = Employee::default();
                             log!("ConfigPage: Adding new employee {}", cleaned_employee.name);
                             is_added = true;
-                            
+
                             // 仅新增该行数据
                             let new_emp = cleaned_employee.clone();
                             cx.spawn_thread(move || add_employee_config(new_emp));
                         }
-                        
+
                         if is_added {
                             // 自动滚动到新的空行 (此时 len 已经 push 过，所以 len 指向新的空行)
                             let list = self.portal_list(id!(employee_list));

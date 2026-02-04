@@ -1,8 +1,8 @@
 use crate::employees::load_config;
 use crate::ui::app::backend_handler::handle_backend_result;
 use crate::ui::app::ui_handler::handle_ui_action;
-use crate::ui::pages::employees::page::ConfigPageAction;
 use crate::ui::layout::app_shell::AppShellWidgetRefExt;
+use crate::ui::pages::employees::page::ConfigPageAction;
 use makepad_widgets::*;
 
 #[derive(Clone, Debug, DefaultNone)]
@@ -21,7 +21,7 @@ live_design! {
         ui: <Root> {
             main_window = <Window> {
                 window: {inner_size: vec2(1000, 600)},
-                pass: {clear_color: #F9FAFB}
+                pass: {clear_color: #F9FAFBFF}
 
                 caption_bar = {
                     visible: true,
@@ -29,7 +29,7 @@ live_design! {
                     caption_label = {
                         label = {
                             text: "Meal Manager"
-                            draw_text: { color: #000 }
+                            draw_text: { color: #000000FF }
                         }
                     }
                 },
@@ -50,10 +50,8 @@ pub struct App {
 
 impl LiveRegister for App {
     fn live_register(cx: &mut Cx) {
-        println!("App::live_register start");
         makepad_widgets::live_design(cx);
         crate::ui::register_live_design(cx);
-        println!("App::live_register end");
     }
 }
 
@@ -75,9 +73,10 @@ impl MatchEvent for App {
                 let config_act = widget_action.cast::<ConfigPageAction>();
                 match config_act {
                     ConfigPageAction::ValidationError(msg) => {
+                        println!("ConfigPageAction::ValidationError({msg})");
                         self.ui.as_app_shell().show_error(cx, &msg);
                     }
-                    _ => ()
+                    _ => (),
                 }
             }
 

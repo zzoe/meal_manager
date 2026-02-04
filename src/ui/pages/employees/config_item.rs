@@ -1,5 +1,5 @@
-use makepad_widgets::*;
 use crate::employees::Employee;
+use makepad_widgets::*;
 
 live_design! {
     use link::widgets::*;
@@ -23,7 +23,7 @@ live_design! {
         content = <View> {
             width: Fill, height: Fill
             flow: Right, spacing: 10.0, padding: {left: 15.0, right: 15.0}, align: {y: 0.5}
-            
+
             // 序号
             id_label = <Label> {
                 width: 40.0, height: Fit
@@ -36,13 +36,13 @@ live_design! {
                 width: 140.0, height: Fit
                 empty_text: "输入姓名..."
             }
-            
+
             // 昵称
             aliases_input = <StyledTextInput> {
                 width: Fill, height: Fit
                 empty_text: "例如: 小明, zhangsan..."
             }
-            
+
             // 操作区域
             action_btn = <View> {
                 width: 50.0, height: Fit
@@ -111,8 +111,12 @@ impl WidgetMatchEvent for EmployeeConfigItem {
         if name_input.changed(actions).is_some() || aliases_input.changed(actions).is_some() {
             // 发出变化通知，让 Page 同步 Live 数据
             let employee = self.get_current_employee();
-            cx.widget_action(self.widget_uid(), &scope.path, EmployeeConfigItemAction::Changed(self.index, employee));
-            
+            cx.widget_action(
+                self.widget_uid(),
+                &scope.path,
+                EmployeeConfigItemAction::Changed(self.index, employee),
+            );
+
             self.check_modifications(cx);
         }
     }
@@ -122,13 +126,13 @@ impl EmployeeConfigItem {
     fn get_current_employee(&self) -> Employee {
         let name = self.text_input(id!(name_input)).text();
         let aliases_text = self.text_input(id!(aliases_input)).text();
-        
+
         let names: Vec<String> = aliases_text
             .split(&[',', '，'][..])
             .map(|s: &str| s.trim().to_string())
             .filter(|s: &String| !s.is_empty())
             .collect();
-        
+
         Employee::new(name, names)
     }
 
@@ -143,30 +147,41 @@ impl EmployeeConfigItem {
 
         if let Some(cache) = &self.employee_cache {
             let current_emp = self.get_current_employee();
-            
-            let is_modified = current_emp.name.trim() != cache.name.trim() || current_emp.aliases != cache.aliases;
-            
+
+            let is_modified = current_emp.name.trim() != cache.name.trim()
+                || current_emp.aliases != cache.aliases;
+
             let has_content = !current_emp.name.trim().is_empty();
             let show_save = is_modified && has_content;
 
             self.button(id!(action_btn.save)).set_visible(cx, show_save);
-            self.button(id!(action_btn.delete)).set_visible(cx, !show_save);
+            self.button(id!(action_btn.delete))
+                .set_visible(cx, !show_save);
             self.view.redraw(cx);
         }
     }
 }
 
 impl EmployeeConfigItemRef {
-    pub fn set_employee(&self, cx: &mut Cx, index: usize, current: &Employee, original: &Employee, is_new_item: bool) {
+    pub fn set_employee(
+        &self,
+        cx: &mut Cx,
+        index: usize,
+        current: &Employee,
+        original: &Employee,
+        is_new_item: bool,
+    ) {
         if let Some(mut inner) = self.borrow_mut() {
             let index_changed = inner.index != index;
-            
+
             inner.index = index;
             inner.is_new_item = is_new_item;
             // 重要：必须先同步缓存，因为 check_modifications 依赖它
             inner.employee_cache = Some(original.clone());
 
-            inner.label(id!(id_label)).set_text(cx, &format!("{}", index + 1));
+            inner
+                .label(id!(id_label))
+                .set_text(cx, &format!("{}", index + 1));
 
             let name_input = inner.text_input(id!(name_input));
             // 姓名：简单的字符串，直接比对内容。如果内容一致，绝对不调用 set_text，防止光标跳动或双字符问题
@@ -180,8 +195,10 @@ impl EmployeeConfigItemRef {
             // 1. 如果完全切行了 (index_changed)，必须强制刷新，无论有没有焦点（复用 widget）
             // 2. 如果没切行且有焦点，为了防止 auto-format 打断用户输入（如输入空格），只要还没有完全偏离（或者干脆信任用户），就不更新
             // 这里我们采用：有焦点就不更新，除非切行。
-            if index_changed || (!aliases_input.key_focus(cx) && aliases_input.text() != new_aliases_text) {
-                 aliases_input.set_text(cx, &new_aliases_text);
+            if index_changed
+                || (!aliases_input.key_focus(cx) && aliases_input.text() != new_aliases_text)
+            {
+                aliases_input.set_text(cx, &new_aliases_text);
             }
 
             // 初始状态判定：强制刷新按钮状态
@@ -191,7 +208,7 @@ impl EmployeeConfigItemRef {
             } else {
                 inner.check_modifications(cx);
             }
-            
+
             inner.view.redraw(cx);
         }
     }

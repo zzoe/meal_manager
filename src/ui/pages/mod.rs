@@ -8,7 +8,6 @@ pub use meal_stats as stats_page;
 use makepad_widgets::Cx;
 
 pub fn register_live_design(cx: &mut Cx) {
-    println!("UI::Pages: register_live_design");
     meal_stats::live_design(cx);
     employees::live_design(cx);
 }

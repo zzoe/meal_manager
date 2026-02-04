@@ -22,7 +22,7 @@ impl EmployeeStorage {
         let write_txn = db.begin_write()?;
         {
             let mut table = write_txn.open_table(TABLE_EMPLOYEES)?;
-            
+
             // 先清空所有旧数据
             let mut keys_to_delete = Vec::new();
             for item in table.iter()? {
@@ -104,7 +104,6 @@ impl EmployeeStorage {
                 }
             }
         }
-        println!("EmployeeStorage: loaded {} employees", list.len());
         list
     }
 }
