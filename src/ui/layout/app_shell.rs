@@ -10,26 +10,31 @@ live_design! {
 
     pub AppShell = {{AppShell}} {
         width: Fill, height: Fill
-        flow: Right, spacing: 0.0
+        flow: Overlay
 
-        // --- 左侧：侧边栏 ---
-        sidebar = <Sidebar> {}
-
-        // --- 右侧：工作区 ---
-        content_container = <View> {
+        main_view = <View> {
             width: Fill, height: Fill
-            show_bg: true, draw_bg: { color: (COLOR_BG_APP) }
+            flow: Right, spacing: 0.0
 
-            // 使用 PageFlip 进行页面切换
-            navigation = <PageFlip> {
+            // --- 左侧：侧边栏 ---
+            sidebar = <Sidebar> {}
+
+            // --- 右侧：工作区 ---
+            content_container = <View> {
                 width: Fill, height: Fill
-                active_page: stats
+                show_bg: true, draw_bg: { color: (COLOR_BG_APP) }
 
-                // 页面 1: 统计页
-                stats = <StatsPage> {}
+                // 使用 PageFlip 进行页面切换
+                navigation = <PageFlip> {
+                    width: Fill, height: Fill
+                    active_page: stats
 
-                // 页面 2: 配置页
-                config = <ConfigPage> {}
+                    // 页面 1: 统计页
+                    stats = <StatsPage> {}
+
+                    // 页面 2: 配置页
+                    config = <ConfigPage> {}
+                }
             }
         }
 
