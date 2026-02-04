@@ -73,7 +73,10 @@ impl MatchEvent for App {
                 let config_act = widget_action.cast::<ConfigPageAction>();
                 if let ConfigPageAction::ValidationError(msg) = config_act {
                     println!("ConfigPageAction::ValidationError({msg})");
-                    self.ui.as_app_shell().show_error(cx, &msg);
+                    self.ui
+                        .widget(&[LiveId::from_str("body")])
+                        .as_app_shell()
+                        .show_error(cx, &msg);
                 }
             }
 

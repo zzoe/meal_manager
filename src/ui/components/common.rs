@@ -188,7 +188,7 @@ live_design! {
 
         content = <View> {
             width: Fill, height: Fill
-            show_bg: true, draw_bg: { color: #00000080 }
+            show_bg: true, draw_bg: { color: #00000000 }
             // 使用对齐而不是坐标偏移，确保渲染稳定
             align: {x: 0.5, y: 0.5}
 
@@ -197,7 +197,7 @@ live_design! {
                 flow: Down, spacing: 20.0, padding: 25.0
 
                 draw_bg: {
-                    color: #00FF00FF
+                    color: #FFFFFFFF
                     border_radius: 12.0
                     border_color: (COLOR_BORDER)
                     border_size: 1.0
