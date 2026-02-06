@@ -182,51 +182,43 @@ live_design! {
         }
     }
 
-    // 错误提示弹窗 - 使用标准对齐方案确保文本可见
+    // 错误提示弹窗
     pub ErrorModal = <Modal> {
-        width: Fill, height: Fill
+        content: <RoundedView> {
+            width: 360.0, height: Fit
+            spacing: 24.0, padding: 32.0
+            flow: Down,
+            show_bg: true
 
-        content = <View> {
-            width: Fill, height: Fill
-            show_bg: true, draw_bg: { color: #00000000 }
-            // 使用对齐而不是坐标偏移，确保渲染稳定
-            align: {x: 0.5, y: 0.5}
+            draw_bg: {
+                color: #FFFFFFFF
+                border_radius: 6.0
+            }
 
-            inner_content = <RoundedView> {
-                width: 320.0, height: Fit
-                flow: Down, spacing: 20.0, padding: 25.0
-
-                draw_bg: {
-                    color: #FFFFFFFF
-                    border_radius: 12.0
-                    border_color: (COLOR_BORDER)
-                    border_size: 1.0
+            title = <Label> {
+                text: "提示"
+                draw_text: {
+                    color: #1F2937FF
+                    text_style: { font_size: 18.0 }
                 }
+            }
 
-                title = <Label> {
-                    text: "提示"
-                    draw_text: {
-                        color: (COLOR_TEXT_PRIMARY)
-                        text_style: { font_size: 14.0, font_weight: 700 }
-                    }
+            message = <Label> {
+                width: Fill
+                text: ""
+                draw_text: {
+                    color: #4B5563FF
+                    wrap: Word
+                    text_style: { font_size: 14.0 }
                 }
+            }
 
-                message = <Label> {
-                    width: Fill
-                    text: ""
-                    draw_text: {
-                        color: (COLOR_TEXT_SECONDARY)
-                        wrap: Word
-                        text_style: { font_size: 12.0 }
-                    }
-                }
+            <View> {
+                width: Fill, height: Fit
+                flow: Right, align: {x: 1.0}
 
-                <View> {
-                    width: Fill, height: Fit
-                    flow: Right, align: {x: 1.0}
-                    ok_btn = <BlueButton> {
-                        width: 100.0, height: 38.0, text: "确定"
-                    }
+                ok_btn = <BlueButton> {
+                    width: 100.0, height: 40.0, text: "确定"
                 }
             }
         }
