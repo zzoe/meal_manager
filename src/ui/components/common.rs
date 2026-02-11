@@ -198,7 +198,7 @@ live_design! {
             title = <Label> {
                 text: "提示"
                 draw_text: {
-                    color: #1F2937FF
+                    color: (COLOR_LUNCH_TEXT)
                     text_style: { font_size: 18.0 }
                 }
             }
@@ -207,7 +207,7 @@ live_design! {
                 width: Fill
                 text: ""
                 draw_text: {
-                    color: #4B5563FF
+                    color: (COLOR_ERROR_TEXT)
                     wrap: Word
                     text_style: { font_size: 14.0 }
                 }
