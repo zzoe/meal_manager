@@ -57,3 +57,28 @@ jobs:
 
       - name: Build (release)
         run: cargo build --release
+
+      - name: Package binary
+        shell: bash
+        run: |
+          # 确定目标名称 (arch-os)
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            TARGET="x86_64-unknown-linux-gnu"
+            EXT=""
+          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            TARGET="x86_64-pc-windows-msvc"
+            EXT=".exe"
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            TARGET="aarch64-apple-darwin"
+            EXT=""
+          fi
+          
+          # 创建带目标名称的二进制文件
+          cp "target/release/meal_manager${EXT}" "target/release/meal_manager-${TARGET}${EXT}"
+          echo "TARGET=${TARGET}" >> $GITHUB_ENV
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: meal_manager-${{ env.TARGET }}
+          path: target/release/meal_manager-*-*
