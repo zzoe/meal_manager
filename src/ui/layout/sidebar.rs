@@ -10,7 +10,7 @@ live_design! {
     pub Sidebar = {{Sidebar}} {
         width: 120.0, height: Fill
         flow: Down, spacing: 10.0, padding: 10.0
-        show_bg: true, draw_bg: { color: (COLOR_BG_SIDEBAR) }
+        show_bg: true, draw_bg: { color: (THEME_COLOR_U_5) }
 
         // 顶部折叠按钮区
         <View> {
@@ -56,11 +56,25 @@ impl WidgetMatchEvent for Sidebar {
 
             let width = if self.collapsed { 50.0 } else { 120.0 };
             let btn_text = if self.collapsed { ">>" } else { "<<" };
-            let nav_visible = !self.collapsed;
 
             self.apply_over(cx, live! { width: (width) });
             self.button(id!(btn_toggle)).set_text(cx, btn_text);
-            self.view(id!(nav_group)).set_visible(cx, nav_visible);
+
+            // 折叠时隐藏导航文字，展开时恢复
+            // 不使用 set_visible —— 在 WASM/WebGL 环境下，set_visible(false) 会
+            // 导致子 widget 的 GPU instance 缓冲区被释放，再次 set_visible(true)
+            // 后 animator 的 instance 变量（hover/down/focus）未正确写回，
+            // 使 draw_text.get_color() 返回黑色/透明，表现为"灰色方块无文字"。
+            // 改用 apply_over 控制 nav_group 高度，让按钮始终参与绘制流程。
+            if self.collapsed {
+                self.view(id!(nav_group)).apply_over(cx, live! {
+                    height: 0.0, margin: 0.0, spacing: 0.0
+                });
+            } else {
+                self.view(id!(nav_group)).apply_over(cx, live! {
+                    height: Fit, spacing: 5.0
+                });
+            }
 
             self.redraw(cx);
         }

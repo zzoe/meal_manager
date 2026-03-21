@@ -6,37 +6,14 @@ live_design! {
     use link::theme::*;
     use makepad_draw::shader::std::*;
 
-    // 调色板
-    pub COLOR_BG_APP = #F3F4F6FF
-    pub COLOR_BG_SIDEBAR = #1F2937FF
-    pub COLOR_BG_CARD = #FFFFFFFF
-
-    pub COLOR_TEXT_PRIMARY = #111827FF
-    pub COLOR_TEXT_SECONDARY = #6B7280FF
-
-    // 功能色
-    pub COLOR_PRIMARY = #2196F3FF
-
-    // 结果卡片头部背景
-    pub COLOR_LUNCH_HEADER = #FFF7EDFF    // Orange-50
-    pub COLOR_DINNER_HEADER = #EEF2FFFF   // Indigo-50
-    pub COLOR_ERROR_HEADER = #FEF2F2FF    // Red-50
-
-    // 结果卡片标题文字
-    pub COLOR_LUNCH_TEXT = #B45309FF      // Orange-700
-    pub COLOR_DINNER_TEXT = #4338CAFF     // Indigo-700
-    pub COLOR_ERROR_TEXT = #B91C1CFF      // Red-700
-
-    pub COLOR_BORDER = #E5E7EBFF
-
     // 结果展示卡片
     pub ResultCard = <RoundedView> {
         width: Fill, height: Fill
         flow: Down, spacing: 0.0
 
         draw_bg: {
-            color: (COLOR_BG_CARD)
-            border_color: (COLOR_BORDER)
+            color: (THEME_COLOR_WHITE)
+            border_color: (THEME_COLOR_INSET_1)
             border_size: 1.0
             border_radius: 8.0
         }
@@ -46,7 +23,7 @@ live_design! {
             width: Fill, height: 40.0
             padding: {top: 10.0, left: 15.0}
             draw_bg: {
-                color: #F0F0F0FF
+                color: (THEME_COLOR_LIGHT)
                 border_radius: vec2( 8.0, 1.0)
             }
 
@@ -67,7 +44,7 @@ live_design! {
                 width: Fill, height: Fit
                 text: "暂无数据"
                 draw_text: {
-                    color: (COLOR_TEXT_PRIMARY)
+                    color: (THEME_COLOR_TEXT)
                     wrap: Word
                     text_style: { font_size: 13.0 }
                 }
@@ -79,15 +56,19 @@ live_design! {
     pub NavButton = <Button> {
         width: Fill, height: 40.0
         draw_text: {
-            color: #D1D5DBFF
+            color: (THEME_COLOR_TEXT)
+            color_hover: (THEME_COLOR_TEXT)
+            color_down: (THEME_COLOR_TEXT)
+            color_focus: (THEME_COLOR_TEXT)
+            color_disabled: (THEME_COLOR_TEXT_DISABLED)
             text_style: { font_size: 12.0 }
         }
         draw_bg: {
-            color: #00000000
+            color: (THEME_COLOR_U_HIDDEN)
             border_size: 0.0
             border_radius: 4.0
-            color_hover: #374151FF
-            color_down: #111827FF
+            color_hover: (THEME_COLOR_U_4)
+            color_down: (THEME_COLOR_U_6)
 
             // 确保状态切换时颜色正确
             instance hover: 0.0
@@ -100,14 +81,18 @@ live_design! {
     pub ToggleButton = <Button> {
         width: Fill, height: 30.0
         draw_text: {
-            color: #9CA3AFFF
+            color: (THEME_COLOR_TEXT)
+            color_hover: (THEME_COLOR_TEXT)
+            color_down: (THEME_COLOR_TEXT)
+            color_focus: (THEME_COLOR_TEXT)
+            color_disabled: (THEME_COLOR_TEXT_DISABLED)
             text_style: { font_size: 14.0 }
         }
         draw_bg: {
-            color: #00000000
+            color: (THEME_COLOR_U_HIDDEN)
             border_size: 0.0
-            color_hover: #374151FF
-            color_down: #111827FF
+            color_hover: (THEME_COLOR_U_4)
+            color_down: (THEME_COLOR_U_6)
         }
     }
 
@@ -115,14 +100,14 @@ live_design! {
     pub BlueButton = <Button> {
         width: Fill, height: 48.0
         draw_text: {
-            color: #FFFFFF
+            color: (THEME_COLOR_WHITE)
             text_style: { font_size: 14.0 }
         }
         draw_bg: {
-            color: #2196F3FF
-            color_hover: #1976D2FF
-            color_down: #1565C0FF
-            color_focus: #2196F3FF
+            color: (THEME_COLOR_VAL)
+            color_hover: (THEME_COLOR_VAL_HOVER)
+            color_down: (THEME_COLOR_VAL_FOCUS)
+            color_focus: (THEME_COLOR_VAL)
 
             border_size: 0.0
             border_radius: 6.0
@@ -139,15 +124,35 @@ live_design! {
         padding: {left: 10.0, right: 10.0, top: 4.0, bottom: 4.0}
 
         draw_bg: {
-            color: #F9FAFBFF
+            color: (THEME_COLOR_LIGHT)
+            border_size: 1.0
+            border_color_1: (THEME_COLOR_INSET_1)
+            border_color_1_hover: (THEME_COLOR_INSET_1)
+            border_color_1_focus: (THEME_COLOR_INSET_1)
+            border_color_1_down: (THEME_COLOR_INSET_1)
+            border_color_1_empty: (THEME_COLOR_INSET_1)
+            border_color_1_disabled: (THEME_COLOR_INSET_1)
+            border_color_2: (THEME_COLOR_INSET_1)
+            border_color_2_hover: (THEME_COLOR_INSET_1)
+            border_color_2_focus: (THEME_COLOR_INSET_1)
+            border_color_2_down: (THEME_COLOR_INSET_1)
+            border_color_2_empty: (THEME_COLOR_INSET_1)
+            border_color_2_disabled: (THEME_COLOR_INSET_1)
             instance border_radius: 4.0
         }
 
         draw_text: {
             text_style: { font_size: 11.0 }
-            color: (COLOR_TEXT_PRIMARY)
+            color: (THEME_COLOR_TEXT)
+            color_hover: (THEME_COLOR_TEXT)
+            color_focus: (THEME_COLOR_TEXT)
+            color_down: (THEME_COLOR_TEXT)
+            color_disabled: (THEME_COLOR_TEXT_DISABLED)
+            color_empty: (THEME_COLOR_TEXT_PLACEHOLDER)
+            color_empty_hover: (THEME_COLOR_TEXT_PLACEHOLDER_HOVER)
+            color_empty_focus: (THEME_COLOR_TEXT)
         }
-        draw_selection: { color: #BFDBFEFF }
+        draw_selection: { color: (THEME_COLOR_SELECTION) }
     }
 
     // 行操作按钮 (透明背景 + 无边框)
@@ -155,12 +160,12 @@ live_design! {
         width: 32.0, height: 32.0
         text: "💾"
         draw_text: {
-            color: (COLOR_PRIMARY)
+            color: (THEME_COLOR_VAL)
             text_style: { font_size: 14.0 }
         }
         draw_bg: {
-            color: #FFFFFFFF
-            color_hover: #E5E7EBFF
+            color: (THEME_COLOR_WHITE)
+            color_hover: (THEME_COLOR_LIGHT_HOVER)
             border_radius: 4.0
             border_size: 0.0
         }
@@ -171,12 +176,12 @@ live_design! {
         width: 32.0, height: 32.0
         text: "🗑️"
         draw_text: {
-            color: (COLOR_TEXT_SECONDARY)
+            color: (THEME_COLOR_TEXT_META)
             text_style: { font_size: 14.0 }
         }
         draw_bg: {
-            color: #FFFFFFFF
-            color_hover: #FEE2E2FF
+            color: (THEME_COLOR_WHITE)
+            color_hover: (THEME_COLOR_SELECTION_HOVER)
             border_radius: 4.0
             border_size: 0.0
         }
@@ -191,14 +196,14 @@ live_design! {
             show_bg: true
 
             draw_bg: {
-                color: #FFFFFFFF
+                color: (THEME_COLOR_WHITE)
                 border_radius: 6.0
             }
 
             title = <Label> {
                 text: "提示"
                 draw_text: {
-                    color: (COLOR_LUNCH_TEXT)
+                    color: (THEME_COLOR_WARNING)
                     text_style: { font_size: 18.0 }
                 }
             }
@@ -207,7 +212,7 @@ live_design! {
                 width: Fill
                 text: ""
                 draw_text: {
-                    color: (COLOR_ERROR_TEXT)
+                    color: (THEME_COLOR_ERROR)
                     wrap: Word
                     text_style: { font_size: 14.0 }
                 }

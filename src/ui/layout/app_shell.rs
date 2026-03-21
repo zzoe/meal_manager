@@ -18,7 +18,7 @@ live_design! {
             sidebar = <Sidebar> {}
             content_container = <View> {
                 width: Fill, height: Fill
-                show_bg: true, draw_bg: { color: (COLOR_BG_APP) }
+                show_bg: true, draw_bg: { color: (THEME_COLOR_BG_APP) }
                 navigation = <PageFlip> {
                     width: Fill, height: Fill
                     active_page: stats

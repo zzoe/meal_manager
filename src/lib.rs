@@ -1,4 +1,5 @@
 pub mod features;
+#[cfg(not(target_arch = "wasm32"))]
 pub mod infra;
 pub mod ui;
 

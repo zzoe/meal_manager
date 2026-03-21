@@ -2,6 +2,7 @@ pub mod app;
 pub mod components;
 pub mod layout;
 pub mod pages;
+pub mod theme_custom_light;
 
 use makepad_widgets::Cx;
 

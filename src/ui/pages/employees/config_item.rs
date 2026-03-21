@@ -13,8 +13,8 @@ live_design! {
         bg = <RoundedView> {
             width: Fill, height: Fill
             draw_bg: {
-                color: (COLOR_BG_CARD)
-                border_color: (COLOR_BORDER)
+                color: (THEME_COLOR_WHITE)
+                border_color: (THEME_COLOR_INSET_1)
                 border_size: 0.5
                 border_radius: 0.0
             }
@@ -28,7 +28,7 @@ live_design! {
             id_label = <Label> {
                 width: 40.0, height: Fit
                 text: "0"
-                draw_text: { color: (COLOR_TEXT_SECONDARY), text_style: { font_size: 10.0 } }
+                draw_text: { color: (THEME_COLOR_TEXT_META), text_style: { font_size: 10.0 } }
             }
 
             // 姓名
@@ -163,6 +163,14 @@ impl EmployeeConfigItem {
 }
 
 impl EmployeeConfigItemRef {
+    pub fn set_padding(&self, cx: &mut Cx, padding: bool) {
+        if let Some(mut inner) = self.borrow_mut() {
+            inner.view(id!(bg)).set_visible(cx, !padding);
+            inner.view(id!(content)).set_visible(cx, !padding);
+            inner.view.redraw(cx);
+        }
+    }
+
     pub fn set_employee(
         &self,
         cx: &mut Cx,

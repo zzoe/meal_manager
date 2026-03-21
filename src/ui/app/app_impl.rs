@@ -9,6 +9,7 @@ use makepad_widgets::*;
 pub enum AppAction {
     NavigateToStats,
     NavigateToConfig,
+    SidebarToggled(f64),
     None,
 }
 
@@ -21,7 +22,7 @@ live_design! {
         ui: <Root> {
             main_window = <Window> {
                 window: {inner_size: vec2(1000, 600)},
-                pass: {clear_color: #F9FAFBFF}
+                pass: {clear_color: (THEME_COLOR_BG_APP)}
 
                 caption_bar = {
                     visible: true,
@@ -29,7 +30,7 @@ live_design! {
                     caption_label = {
                         label = {
                             text: "Meal Manager"
-                            draw_text: { color: #000000FF }
+                            draw_text: { color: (THEME_COLOR_TEXT) }
                         }
                     }
                 },
@@ -51,6 +52,8 @@ pub struct App {
 impl LiveRegister for App {
     fn live_register(cx: &mut Cx) {
         makepad_widgets::live_design(cx);
+        crate::ui::theme_custom_light::live_design(cx);
+        cx.link(live_id!(theme), live_id!(theme_custom_light));
         crate::ui::register_live_design(cx);
     }
 }
@@ -58,7 +61,12 @@ impl LiveRegister for App {
 impl MatchEvent for App {
     fn handle_startup(&mut self, cx: &mut Cx) {
         // 应用启动时异步加载配置
+        #[cfg(not(target_arch = "wasm32"))]
         cx.spawn_thread(load_config);
+        #[cfg(target_arch = "wasm32")]
+        let _ = cx;
+        #[cfg(target_arch = "wasm32")]
+        load_config();
     }
 
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
@@ -79,9 +87,9 @@ impl MatchEvent for App {
                         .show_error(cx, &msg);
                 }
             }
-
-            handle_backend_result(cx, actions, &self.ui);
         }
+
+        handle_backend_result(cx, actions, &self.ui);
     }
 }
 

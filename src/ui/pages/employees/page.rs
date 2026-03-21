@@ -27,7 +27,7 @@ live_design! {
                     flow: Down, spacing: 2.0
                     <Label> {
                         text: "员工登记"
-                        draw_text: { color: (COLOR_TEXT_PRIMARY), text_style: { font_size: 18.0 } }
+                        draw_text: { color: (THEME_COLOR_TEXT), text_style: { font_size: 18.0 } }
                     }
                 }
 
@@ -35,14 +35,18 @@ live_design! {
                     width: 32.0, height: 32.0
                     text: "↻"
                     draw_text: {
-                        color: (COLOR_PRIMARY)
-                        color_hover: (COLOR_TEXT_PRIMARY)
-                        color_focus: (COLOR_PRIMARY)
+                        color: (THEME_COLOR_TEXT)
+                        color_hover: (THEME_COLOR_TEXT)
+                        color_down: (THEME_COLOR_TEXT)
+                        color_focus: (THEME_COLOR_TEXT)
                         text_style: { font_size: 18.0 }
                     }
                     draw_bg: {
-                        color: #FFFFFFFF
-                        border_radius: 16.0
+                        color: (THEME_COLOR_U_HIDDEN)
+                        color_hover: (THEME_COLOR_LIGHT_HOVER)
+                        color_down: (THEME_COLOR_U_4)
+                        color_focus: (THEME_COLOR_LIGHT_HOVER)
+                        border_radius: 8.0
                         border_size: 0.0
                     }
                 }
@@ -56,23 +60,23 @@ live_design! {
                 <View> {
                     width: Fill, height: 35.0
                     flow: Right, spacing: 10.0, padding: {left: 15.0, right: 15.0}, align: {y: 0.5}
-                    show_bg: true, draw_bg: { color: (COLOR_BG_APP) }
+                    show_bg: true, draw_bg: { color: (THEME_COLOR_BG_APP) }
 
                     <Label> {
                         width: 40.0, text: "#"
-                        draw_text: { color: (COLOR_TEXT_SECONDARY), text_style: { font_size: 10.0 } }
+                        draw_text: { color: (THEME_COLOR_TEXT_META), text_style: { font_size: 10.0 } }
                     }
                     <Label> {
                         width: 140.0, text: "姓名"
-                        draw_text: { color: (COLOR_TEXT_SECONDARY), text_style: { font_size: 10.0 } }
+                        draw_text: { color: (THEME_COLOR_TEXT_META), text_style: { font_size: 10.0 } }
                     }
                     <Label> {
                         width: Fill, text: "昵称"
-                        draw_text: { color: (COLOR_TEXT_SECONDARY), text_style: { font_size: 10.0 } }
+                        draw_text: { color: (THEME_COLOR_TEXT_META), text_style: { font_size: 10.0 } }
                     }
                     <Label> {
                         width: 50.0, text: "操作"
-                        draw_text: { color: (COLOR_TEXT_SECONDARY), text_style: { font_size: 10.0 } }
+                        draw_text: { color: (THEME_COLOR_TEXT_META), text_style: { font_size: 10.0 } }
                     }
                 }
 
@@ -121,37 +125,42 @@ impl Widget for ConfigPage {
 
         if let Some(mut list) = list_ref.borrow_mut() {
             // 列表长度：员工数 + 1个待填写的空行
-            list.set_item_range(cx, 0, self.employees.len() + 1);
+            let item_count = self.employees.len() + 1;
+            list.set_item_range(cx, 0, item_count);
 
             while let Some(index) = list.next_visible_item(cx) {
                 let widget = list.item(cx, index, live_id!(item));
                 let employee_item = widget.as_employee_config_item();
-                if !employee_item.is_empty() {
-                    if index < self.employees.len() {
-                        // 传实时数据和对应的 DB 原始数据进行对比
-                        let original = self
-                            .db_employees
-                            .get(index)
-                            .unwrap_or(&self.employees[index]);
-                        employee_item.set_employee(
-                            cx,
-                            index,
-                            &self.employees[index],
-                            original,
-                            false,
-                        );
-                    } else {
-                        // 最后一项是待填写的空行，从草稿箱中读取数据
-                        employee_item.set_employee(
-                            cx,
-                            index,
-                            &self.draft_new_employee,
-                            &Employee::new(String::new(), Vec::new()),
-                            true,
-                        );
-                    }
-                    widget.draw_all(cx, scope);
+                if employee_item.is_empty() {
+                    continue;
                 }
+
+                if index >= item_count {
+                    // PortalList 会请求超出范围的条目来填充视口，避免重复“新增行”显示。
+                    employee_item.set_padding(cx, true);
+                    widget.draw_all(cx, scope);
+                    continue;
+                }
+
+                employee_item.set_padding(cx, false);
+                if index < self.employees.len() {
+                    // 传实时数据和对应的 DB 原始数据进行对比
+                    let original = self
+                        .db_employees
+                        .get(index)
+                        .unwrap_or(&self.employees[index]);
+                    employee_item.set_employee(cx, index, &self.employees[index], original, false);
+                } else {
+                    // 最后一项是待填写的空行，从草稿箱中读取数据
+                    employee_item.set_employee(
+                        cx,
+                        index,
+                        &self.draft_new_employee,
+                        &Employee::new(String::new(), Vec::new()),
+                        true,
+                    );
+                }
+                widget.draw_all(cx, scope);
             }
         }
 
@@ -182,7 +191,10 @@ impl WidgetMatchEvent for ConfigPage {
 
                             // 仅删除该行数据
                             let name = employee.name.clone();
+                            #[cfg(not(target_arch = "wasm32"))]
                             cx.spawn_thread(move || delete_employee_config(name));
+                            #[cfg(target_arch = "wasm32")]
+                            delete_employee_config(name);
 
                             self.view.redraw(cx);
                         }
@@ -245,7 +257,10 @@ impl WidgetMatchEvent for ConfigPage {
 
                             // 仅修改该行数据
                             let new_emp = cleaned_employee.clone();
+                            #[cfg(not(target_arch = "wasm32"))]
                             cx.spawn_thread(move || update_employee_config(old_name, new_emp));
+                            #[cfg(target_arch = "wasm32")]
+                            update_employee_config(old_name, new_emp);
                         } else {
                             // 保存的是最后一行空行，即新增
                             self.employees.push(cleaned_employee.clone());
@@ -257,7 +272,10 @@ impl WidgetMatchEvent for ConfigPage {
 
                             // 仅新增该行数据
                             let new_emp = cleaned_employee.clone();
+                            #[cfg(not(target_arch = "wasm32"))]
                             cx.spawn_thread(move || add_employee_config(new_emp));
+                            #[cfg(target_arch = "wasm32")]
+                            add_employee_config(new_emp);
                         }
 
                         if is_added {
@@ -290,9 +308,5 @@ impl ConfigPageRef {
             inner.draft_new_employee = Employee::default();
             inner.view.redraw(cx);
         }
-    }
-
-    pub fn get_employees(&self) -> Option<Vec<Employee>> {
-        self.borrow().map(|inner| inner.employees.clone())
     }
 }

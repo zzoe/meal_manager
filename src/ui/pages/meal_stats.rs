@@ -18,15 +18,15 @@ live_design! {
             flow: Down, spacing: 10.0, padding: 15.0
 
             draw_bg: {
-                color: (COLOR_BG_CARD)
-                border_color: (COLOR_BORDER)
+                color: (THEME_COLOR_WHITE)
+                border_color: (THEME_COLOR_INSET_1)
                 border_size: 0.0
                 border_radius: 8.0
             }
 
             <Label> {
                 text: "输入点餐数据"
-                draw_text: { color: (COLOR_TEXT_PRIMARY), text_style: { font_size: 14.0 } }
+                draw_text: { color: (THEME_COLOR_TEXT), text_style: { font_size: 14.0 } }
             }
 
             // 输入区域容器：固定边框和底色
@@ -35,48 +35,49 @@ live_design! {
                 flow: Down, margin: { top: 10.0 }
                 padding: 10.0
                 draw_bg: {
-                    color: (COLOR_BG_CARD)
-                    border_color: (COLOR_BORDER)
+                    color: (THEME_COLOR_WHITE)
+                    border_color: (THEME_COLOR_INSET_1)
                     border_size: 1.0
                     border_radius: 8.0
                 }
 
-                <ScrollYView> {
+                scroll_view = <ScrollYView> {
                     width: Fill, height: Fill
 
                     input = <TextInput> {
                         width: Fill, height: Fit
                         padding: 15.0
                         empty_text: "此处粘贴点餐内容，例如:\nzoe: 11\n小明: 01..."
+                        is_read_only: false
 
                         // 背景交给外层 input_container，保持输入区透明以免覆盖边框
                         draw_bg: {
-                            color: #FFFFFFFF
-                            color_empty: #FFFFFFFF
-                            color_focus: #FFFFFFFF
-                            color_hover: #FFFFFFFF
-                            color_down: #FFFFFFFF
+                            color: (THEME_COLOR_WHITE)
+                            color_empty: (THEME_COLOR_WHITE)
+                            color_focus: (THEME_COLOR_WHITE)
+                            color_hover: (THEME_COLOR_WHITE)
+                            color_down: (THEME_COLOR_WHITE)
                             border_size: 0.0
                             border_radius: 4.0
                         }
 
                         draw_text: {
                             text_style: { font_size: 13.0, line_spacing: 1.6 }
-                            color: (COLOR_TEXT_PRIMARY)
-                            color_empty: (COLOR_TEXT_PRIMARY)
-                            color_focus: (COLOR_TEXT_PRIMARY)
-                            color_hover: (COLOR_TEXT_PRIMARY)
+                            color: (THEME_COLOR_TEXT)
+                            color_empty: (THEME_COLOR_TEXT)
+                            color_focus: (THEME_COLOR_TEXT)
+                            color_hover: (THEME_COLOR_TEXT)
                             wrap: Word
                         }
 
                         draw_selection: {
-                            color: #BFDBFEFF
-                            color_focus: #BFDBFEFF
-                            color_hover: #BFDBFEFF
+                            color: (THEME_COLOR_SELECTION)
+                            color_focus: (THEME_COLOR_SELECTION)
+                            color_hover: (THEME_COLOR_SELECTION)
                         }
 
                         draw_cursor: {
-                            color: #1E40AFFF
+                            color: (THEME_COLOR_TEXT_CURSOR)
                         }
                     }
                 }
@@ -94,22 +95,22 @@ live_design! {
 
             lunch_card = <ResultCard> {
                 header_slot = {
-                    draw_bg: { color: (COLOR_LUNCH_HEADER) }
-                    header_label = { text: "🍱 中餐", draw_text: { color: (COLOR_LUNCH_TEXT) } }
+                    draw_bg: { color: (THEME_COLOR_VAL_1) }
+                    header_label = { text: "🍱 中餐", draw_text: { color: (THEME_COLOR_WARNING) } }
                 }
             }
 
             dinner_card = <ResultCard> {
                 header_slot = {
-                    draw_bg: { color: (COLOR_DINNER_HEADER) }
-                    header_label = { text: "🥘 晚餐", draw_text: { color: (COLOR_DINNER_TEXT) } }
+                    draw_bg: { color: (THEME_COLOR_VAL_2) }
+                    header_label = { text: "🥘 晚餐", draw_text: { color: (THEME_COLOR_VAL) } }
                 }
             }
 
             exception_card = <ResultCard> {
                 header_slot = {
-                    draw_bg: { color: (COLOR_ERROR_HEADER) }
-                    header_label = { text: "⚠️ 异常与未报", draw_text: { color: (COLOR_ERROR_TEXT) } }
+                    draw_bg: { color: (THEME_COLOR_SELECTION_HOVER) }
+                    header_label = { text: "⚠️ 异常与未报", draw_text: { color: (THEME_COLOR_ERROR) } }
                 }
             }
         }
@@ -143,7 +144,41 @@ impl WidgetMatchEvent for StatsPage {
 
             // 获取输入文本并在后台线程执行分析
             let text = self.text_input(id!(input)).text();
+            #[cfg(not(target_arch = "wasm32"))]
             cx.spawn_thread(move || Cx::post_action(analyzer::analyze(text)));
+            #[cfg(target_arch = "wasm32")]
+            Cx::post_action(analyzer::analyze(text));
+        }
+
+        // 监听 TextInput 的 Changed 事件，自动滚动到光标位置
+        let text_input = self.text_input(id!(input));
+        if text_input.changed(actions).is_some() {
+            self.scroll_to_cursor(cx);
+        }
+    }
+}
+
+impl StatsPage {
+    fn scroll_to_cursor(&self, cx: &mut Cx) {
+        let scroll_view = self.view(id!(scroll_view));
+        let text_input = self.text_input(id!(input));
+
+        // 获取光标位置
+        let cursor = text_input.cursor();
+        
+        // 获取 ScrollYView 并设置滚动位置
+        // ScrollYView 实际上是 View，使用 set_scroll_pos 设置滚动
+        let scroll_view_ref = scroll_view.as_view();
+        if let Some(mut scroll) = scroll_view_ref.borrow_mut() {
+            // 计算目标滚动位置：让光标行位于视口中间偏下
+            // 光标 index 对应字符位置，估算行号：按每行约 30 个字符估算
+            let row_index = cursor.index / 30; // 粗略估算
+            let row_height = 25.0; // approximate row height based on font size 13 + line_spacing 1.6
+            let padding_top = 15.0;
+            let target_scroll_y = (row_index as f64 * row_height) + padding_top;
+
+            // 设置滚动位置
+            scroll.set_scroll_pos(cx, dvec2(0.0, target_scroll_y));
         }
     }
 }

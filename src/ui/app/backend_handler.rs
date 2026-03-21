@@ -1,10 +1,10 @@
-use crate::employees::EmployeeAction;
+use crate::employees::{EmployeeAction, EmployeeOp};
 use crate::meal_stats::MealAnalysisAction;
 use crate::ui::layout::app_shell::AppShellWidgetRefExt;
 use crate::ui::pages::employees::page::ConfigPageWidgetRefExt;
 use crate::ui::pages::meal_stats::StatsPageWidgetRefExt;
 use makepad_widgets::{
-    Actions, Cx, LiveId, PageFlipWidgetRefExt, ViewWidgetRefExt, WidgetRef, id, live_id,
+    Actions, Cx, LiveId, PageFlipWidgetRefExt, ViewWidgetRefExt, WidgetRef, id, live_id, log,
 };
 
 pub fn handle_backend_result(cx: &mut Cx, actions: &Actions, ui: &WidgetRef) {
@@ -37,13 +37,15 @@ pub fn handle_backend_result(cx: &mut Cx, actions: &Actions, ui: &WidgetRef) {
                             .set_employees(cx, employees.to_vec());
                     }
                 }
-                EmployeeAction::Saved => {
-                    let nav_ref = app_shell.view(id!(navigation)).as_page_flip();
-                    if let Some(mut nav) = nav_ref.borrow_mut()
-                        && let Some(_config_page) = nav.page(cx, live_id!(config))
-                    {
-                        // config_page.as_config_page().reset_btn_save_config(cx);
-                    }
+                EmployeeAction::SaveFailed { op, name, error } => {
+                    let op_label = match op {
+                        EmployeeOp::Add => "新增",
+                        EmployeeOp::Update => "更新",
+                        EmployeeOp::Delete => "删除",
+                    };
+                    log!("Employee save failed: op={op_label}, name={name}, error={error}");
+                    let msg = format!("{op_label}员工失败: {name}\n{error}");
+                    app_shell.show_error(cx, &msg);
                 }
                 EmployeeAction::None => {}
             }
