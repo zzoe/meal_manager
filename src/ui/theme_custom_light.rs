@@ -3,6 +3,8 @@ use makepad_widgets::makepad_platform::*;
 live_design! {
     link theme_custom_light;
     use link::shaders::*;
+    use link::widgets::*;
+    use link::theme::*;
 
     // GLOBAL PARAMETERS
     pub THEME_COLOR_CONTRAST = 1.0
@@ -331,6 +333,12 @@ live_design! {
     pub THEME_COLOR_LIGHT = #F1F5F9FF
     pub THEME_COLOR_LIGHT_HOVER = #E2E8F0FF
     pub THEME_COLOR_INSET_1 = #E2E8F0FF
+    pub THEME_COLOR_APP_CAPTION_BAR = #E2E8F0FF
+    pub THEME_COLOR_CAPTION_BUTTON_ICON = #0F172AFF
+    pub THEME_COLOR_CAPTION_BUTTON_HOVER = #CBD5E1FF
+    pub THEME_COLOR_CAPTION_BUTTON_PRESSED = #94A3B8FF
+    pub THEME_COLOR_CAPTION_BUTTON_CLOSE_HOVER = #F87171FF
+    pub THEME_COLOR_CAPTION_BUTTON_CLOSE_PRESSED = #DC2626FF
 
     pub THEME_COLOR_TEXT = #0F172AFF
     pub THEME_COLOR_TEXT_META = #475569FF

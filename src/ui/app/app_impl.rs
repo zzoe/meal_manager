@@ -14,6 +14,7 @@ pub enum AppAction {
 }
 
 live_design! {
+    use link::shaders::*;
     use link::widgets::*;
     use link::theme::*;
     use crate::ui::layout::app_shell::AppShell;
@@ -26,11 +27,39 @@ live_design! {
 
                 caption_bar = {
                     visible: true,
-                    margin: {left: -200},
+                    draw_bg: { color: (THEME_COLOR_APP_CAPTION_BAR) }
                     caption_label = {
                         label = {
                             text: "Meal Manager"
                             draw_text: { color: (THEME_COLOR_TEXT) }
+                        }
+                    }
+
+                    windows_buttons = {
+                        visible: true,
+                        min = <DesktopButton> {
+                            draw_bg: {
+                                button_type: WindowsMin
+                                color: (THEME_COLOR_CAPTION_BUTTON_ICON)
+                                color_hover: (THEME_COLOR_CAPTION_BUTTON_HOVER)
+                                color_down: (THEME_COLOR_CAPTION_BUTTON_PRESSED)
+                            }
+                        }
+                        max = <DesktopButton> {
+                            draw_bg: {
+                                button_type: WindowsMax
+                                color: (THEME_COLOR_CAPTION_BUTTON_ICON)
+                                color_hover: (THEME_COLOR_CAPTION_BUTTON_HOVER)
+                                color_down: (THEME_COLOR_CAPTION_BUTTON_PRESSED)
+                            }
+                        }
+                        close = <DesktopButton> {
+                            draw_bg: {
+                                button_type: WindowsClose
+                                color: (THEME_COLOR_CAPTION_BUTTON_ICON)
+                                color_hover: (THEME_COLOR_CAPTION_BUTTON_CLOSE_HOVER)
+                                color_down: (THEME_COLOR_CAPTION_BUTTON_CLOSE_PRESSED)
+                            }
                         }
                     }
                 },
@@ -60,7 +89,6 @@ impl LiveRegister for App {
 
 impl MatchEvent for App {
     fn handle_startup(&mut self, cx: &mut Cx) {
-        // 应用启动时异步加载配置
         #[cfg(not(target_arch = "wasm32"))]
         cx.spawn_thread(load_config);
         #[cfg(target_arch = "wasm32")]
