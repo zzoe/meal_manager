@@ -95,15 +95,15 @@ live_design! {
 
             lunch_card = <ResultCard> {
                 header_slot = {
-                    draw_bg: { color: (THEME_COLOR_VAL_1) }
+                    draw_bg: { color: (THEME_COLOR_PRIMARY_LIGHT) }
                     header_label = { text: "🍱 中餐", draw_text: { color: (THEME_COLOR_WARNING) } }
                 }
             }
 
             dinner_card = <ResultCard> {
                 header_slot = {
-                    draw_bg: { color: (THEME_COLOR_VAL_2) }
-                    header_label = { text: "🥘 晚餐", draw_text: { color: (THEME_COLOR_VAL) } }
+                    draw_bg: { color: (THEME_COLOR_PRIMARY_LIGHTER) }
+                    header_label = { text: "🥘 晚餐", draw_text: { color: (THEME_COLOR_PRIMARY) } }
                 }
             }
 

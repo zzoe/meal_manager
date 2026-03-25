@@ -36,7 +36,7 @@ live_design! {
                     }
 
                     windows_buttons = {
-                        visible: true,
+                        visible: false,
                         min = <DesktopButton> {
                             draw_bg: {
                                 button_type: WindowsMin
@@ -89,6 +89,13 @@ impl LiveRegister for App {
 
 impl MatchEvent for App {
     fn handle_startup(&mut self, cx: &mut Cx) {
+        // 仅在 Windows 平台显示标题栏按钮
+        #[cfg(target_os = "windows")]
+        {
+            self.ui.widget(&[LiveId::from_str("main_window"), LiveId::from_str("caption_bar"), LiveId::from_str("windows_buttons")])
+                .set_visible(cx, true);
+        }
+
         #[cfg(not(target_arch = "wasm32"))]
         cx.spawn_thread(load_config);
         #[cfg(target_arch = "wasm32")]

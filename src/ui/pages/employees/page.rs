@@ -35,17 +35,22 @@ live_design! {
                     width: 32.0, height: 32.0
                     text: "↻"
                     draw_text: {
-                        color: (THEME_COLOR_TEXT)
-                        color_hover: (THEME_COLOR_TEXT)
-                        color_down: (THEME_COLOR_TEXT)
-                        color_focus: (THEME_COLOR_TEXT)
-                        text_style: { font_size: 18.0 }
+                        color: (THEME_COLOR_TEXT_META)
+                        color_hover: (THEME_COLOR_PRIMARY)
+                        color_down: (THEME_COLOR_PRIMARY_FOCUS)
+                        color_focus: (THEME_COLOR_PRIMARY)
+                        text_style: {
+                            font_size: 14.0
+                            font_family: {
+                                latin = font("crate://makepad_widgets/resources/fa-solid-900.ttf", 0.0, 0.0)
+                            }
+                        }
                     }
                     draw_bg: {
                         color: (THEME_COLOR_U_HIDDEN)
-                        color_hover: (THEME_COLOR_LIGHT_HOVER)
-                        color_down: (THEME_COLOR_U_4)
-                        color_focus: (THEME_COLOR_LIGHT_HOVER)
+                        color_hover: (THEME_COLOR_U_HIDDEN)
+                        color_down: (THEME_COLOR_PRIMARY_LIGHTER)
+                        color_focus: (THEME_COLOR_U_HIDDEN)
                         border_radius: 8.0
                         border_size: 0.0
                     }

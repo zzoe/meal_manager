@@ -104,10 +104,10 @@ live_design! {
             text_style: { font_size: 14.0 }
         }
         draw_bg: {
-            color: (THEME_COLOR_VAL)
-            color_hover: (THEME_COLOR_VAL_HOVER)
-            color_down: (THEME_COLOR_VAL_FOCUS)
-            color_focus: (THEME_COLOR_VAL)
+            color: (THEME_COLOR_PRIMARY)
+            color_hover: (THEME_COLOR_PRIMARY_HOVER)
+            color_down: (THEME_COLOR_PRIMARY_FOCUS)
+            color_focus: (THEME_COLOR_PRIMARY)
 
             border_size: 0.0
             border_radius: 6.0
@@ -160,7 +160,7 @@ live_design! {
         width: 32.0, height: 32.0
         text: "💾"
         draw_text: {
-            color: (THEME_COLOR_VAL)
+            color: (THEME_COLOR_PRIMARY)
             text_style: { font_size: 14.0 }
         }
         draw_bg: {
