@@ -1,14 +1,16 @@
 use crate::employees::load_config;
 use crate::ui::app::backend_handler::handle_backend_result;
+use crate::ui::app::platform;
 use crate::ui::app::ui_handler::handle_ui_action;
 use crate::ui::layout::app_shell::AppShellWidgetRefExt;
-use crate::ui::pages::employees::page::ConfigPageAction;
+use crate::ui::pages::employees::employee_page::EmployeePageAction;
+use makepad_widgets::makepad_platform::WindowId;
 use makepad_widgets::*;
 
 #[derive(Clone, Debug, DefaultNone)]
 pub enum AppAction {
     NavigateToStats,
-    NavigateToConfig,
+    NavigateToEmployees,
     SidebarToggled(f64),
     None,
 }
@@ -22,7 +24,9 @@ live_design! {
     App = {{App}} {
         ui: <Root> {
             main_window = <Window> {
-                window: {inner_size: vec2(1000, 600)},
+                // 初始大小会在 handle_draw 中动态计算并设置
+                // 这里使用一个较小的默认值，避免窗口创建时过大
+                window: {inner_size: vec2(1000, 618)},
                 pass: {clear_color: (THEME_COLOR_BG_APP)}
 
                 caption_bar = {
@@ -89,33 +93,65 @@ impl LiveRegister for App {
 
 impl MatchEvent for App {
     fn handle_startup(&mut self, cx: &mut Cx) {
-        // 仅在 Windows 平台显示标题栏按钮
+        // Windows 平台特定设置
         #[cfg(target_os = "windows")]
         {
-            self.ui.widget(&[LiveId::from_str("main_window"), LiveId::from_str("caption_bar"), LiveId::from_str("windows_buttons")])
-                .set_visible(cx, true);
+            platform::show_caption_buttons(&self.ui, cx);
+
+            // 计算窗口位置和大小
+            let (position, size) = platform::calc_window_position();
+
+            log!(
+                "Window startup: calculated pos=({:.1},{:.1}), size={:.1}x{:.1}",
+                position.x,
+                position.y,
+                size.x,
+                size.y
+            );
+
+            // 关键：在窗口创建前修改 create_inner_size 和 create_position
+            // WindowHandle::new() 已经将 CreateWindow 操作加入队列，但还未处理
+            // 我们修改 cx.windows 中的值，让 CreateWindow 使用正确的参数
+            // 注意：当前实现假设应用只有一个主窗口（WindowId 0）
+            let window_id = WindowId(0, 0);
+            if cx.windows.is_valid(window_id) {
+                let window = &mut cx.windows[window_id];
+                window.create_inner_size = Some(size);
+                window.create_position = Some(position);
+                log!(
+                    "Window create params updated: size={:.1}x{:.1}, pos={:.1},{:.1}",
+                    size.x,
+                    size.y,
+                    position.x,
+                    position.y
+                );
+            }
         }
 
         #[cfg(not(target_arch = "wasm32"))]
         cx.spawn_thread(load_config);
         #[cfg(target_arch = "wasm32")]
-        let _ = cx;
-        #[cfg(target_arch = "wasm32")]
-        load_config();
+        {
+            let _ = cx;
+            load_config();
+        }
     }
 
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions) {
         for action in actions {
             if let Some(widget_action) = action.as_widget_action() {
+                // 窗口大小和位置已在 handle_startup 中设置
+                // 这里只需要处理其他 action
+
                 let act = widget_action.cast::<AppAction>();
                 match act {
                     AppAction::None => (),
                     _ => handle_ui_action(cx, &act, &self.ui),
                 }
 
-                let config_act = widget_action.cast::<ConfigPageAction>();
-                if let ConfigPageAction::ValidationError(msg) = config_act {
-                    println!("ConfigPageAction::ValidationError({msg})");
+                let config_act = widget_action.cast::<EmployeePageAction>();
+                if let EmployeePageAction::ValidationError(msg) = config_act {
+                    println!("EmployeePageAction::ValidationError({msg})");
                     self.ui
                         .widget(&[LiveId::from_str("body")])
                         .as_app_shell()

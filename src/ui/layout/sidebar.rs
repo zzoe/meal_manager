@@ -23,8 +23,15 @@ live_design! {
             width: Fill, height: Fit
             flow: Down, spacing: 5.0
 
-            btn_nav_stats = <NavButton> { text: "报餐统计" }
-            btn_nav_config = <NavButton> { text: "员工登记" }
+            btn_nav_stats = <NavButton> {
+                text: "📊 报餐统计"
+                // 展开状态下的样式
+                draw_text: { text_style: { font_size: 12.0 } }
+            }
+            btn_nav_employees = <NavButton> {
+                text: "👥 员工登记"
+                draw_text: { text_style: { font_size: 12.0 } }
+            }
         }
     }
 }
@@ -60,20 +67,42 @@ impl WidgetMatchEvent for Sidebar {
             self.apply_over(cx, live! { width: (width) });
             self.button(id!(btn_toggle)).set_text(cx, btn_text);
 
-            // 折叠时隐藏导航文字，展开时恢复
-            // 不使用 set_visible —— 在 WASM/WebGL 环境下，set_visible(false) 会
-            // 导致子 widget 的 GPU instance 缓冲区被释放，再次 set_visible(true)
-            // 后 animator 的 instance 变量（hover/down/focus）未正确写回，
-            // 使 draw_text.get_color() 返回黑色/透明，表现为"灰色方块无文字"。
-            // 改用 apply_over 控制 nav_group 高度，让按钮始终参与绘制流程。
+            // 切换导航按钮的显示模式
             if self.collapsed {
-                self.view(id!(nav_group)).apply_over(cx, live! {
-                    height: 0.0, margin: 0.0, spacing: 0.0
-                });
+                // 收缩状态：只显示图标，调整样式
+                self.button(id!(btn_nav_stats)).set_text(cx, "📊");
+                self.button(id!(btn_nav_employees)).set_text(cx, "👥");
+                // 调整按钮样式为图标模式
+                self.button(id!(btn_nav_stats)).apply_over(
+                    cx,
+                    live! {
+                        draw_text: { text_style: { font_size: 12.0 } }
+                    },
+                );
+                self.button(id!(btn_nav_employees)).apply_over(
+                    cx,
+                    live! {
+                        draw_text: { text_style: { font_size: 12.0 } }
+                    },
+                );
             } else {
-                self.view(id!(nav_group)).apply_over(cx, live! {
-                    height: Fit, spacing: 5.0
-                });
+                // 展开状态：显示图标+文字
+                self.button(id!(btn_nav_stats)).set_text(cx, "📊 报餐统计");
+                self.button(id!(btn_nav_employees))
+                    .set_text(cx, "👥 员工登记");
+                // 恢复按钮样式为文字模式
+                self.button(id!(btn_nav_stats)).apply_over(
+                    cx,
+                    live! {
+                        draw_text: { text_style: { font_size: 12.0 } }
+                    },
+                );
+                self.button(id!(btn_nav_employees)).apply_over(
+                    cx,
+                    live! {
+                        draw_text: { text_style: { font_size: 12.0 } }
+                    },
+                );
             }
 
             self.redraw(cx);
@@ -84,8 +113,12 @@ impl WidgetMatchEvent for Sidebar {
         if self.button(id!(btn_nav_stats)).clicked(actions) {
             cx.widget_action(uid, &HeapLiveIdPath::default(), AppAction::NavigateToStats);
         }
-        if self.button(id!(btn_nav_config)).clicked(actions) {
-            cx.widget_action(uid, &HeapLiveIdPath::default(), AppAction::NavigateToConfig);
+        if self.button(id!(btn_nav_employees)).clicked(actions) {
+            cx.widget_action(
+                uid,
+                &HeapLiveIdPath::default(),
+                AppAction::NavigateToEmployees,
+            );
         }
     }
 }

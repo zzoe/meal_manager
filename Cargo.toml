@@ -17,6 +17,9 @@ anyhow = "*"
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # 本地数据库
 redb = "*"
+# Windows API
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.58", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_UI_WindowsAndMessaging", "Win32_UI_HiDpi"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 web-sys = { version = "*", features = ["Window", "Storage"] }

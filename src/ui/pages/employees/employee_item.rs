@@ -6,7 +6,7 @@ live_design! {
     use link::theme::*;
     use crate::ui::components::common::*;
 
-    pub EmployeeConfigItem = {{EmployeeConfigItem}} {
+    pub EmployeeItem = {{EmployeeItem}} {
         width: Fill, height: 45.0
         flow: Overlay, margin: {bottom: 1.0}
 
@@ -54,7 +54,7 @@ live_design! {
 }
 
 #[derive(Live, LiveHook, Widget)]
-pub struct EmployeeConfigItem {
+pub struct EmployeeItem {
     #[deref]
     view: View,
 
@@ -68,7 +68,7 @@ pub struct EmployeeConfigItem {
     employee_cache: Option<Employee>,
 }
 
-impl Widget for EmployeeConfigItem {
+impl Widget for EmployeeItem {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
         self.view.handle_event(cx, event, scope);
         self.widget_match_event(cx, event, scope);
@@ -80,18 +80,18 @@ impl Widget for EmployeeConfigItem {
 }
 
 #[derive(Clone, Debug, DefaultNone)]
-pub enum EmployeeConfigItemAction {
+pub enum EmployeeItemAction {
     Delete(usize),
     Save(usize, Employee),
     Changed(usize, Employee),
     None,
 }
 
-impl WidgetMatchEvent for EmployeeConfigItem {
+impl WidgetMatchEvent for EmployeeItem {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, scope: &mut Scope) {
         // 处理删除按钮
         if self.button(id!(action_btn.delete)).clicked(actions) {
-            let action = EmployeeConfigItemAction::Delete(self.index);
+            let action = EmployeeItemAction::Delete(self.index);
             cx.widget_action(self.widget_uid(), &scope.path, action);
             return;
         }
@@ -99,7 +99,7 @@ impl WidgetMatchEvent for EmployeeConfigItem {
         // 处理保存按钮
         if self.button(id!(action_btn.save)).clicked(actions) {
             let employee = self.get_current_employee();
-            let action = EmployeeConfigItemAction::Save(self.index, employee);
+            let action = EmployeeItemAction::Save(self.index, employee);
             cx.widget_action(self.widget_uid(), &scope.path, action);
             return;
         }
@@ -114,7 +114,7 @@ impl WidgetMatchEvent for EmployeeConfigItem {
             cx.widget_action(
                 self.widget_uid(),
                 &scope.path,
-                EmployeeConfigItemAction::Changed(self.index, employee),
+                EmployeeItemAction::Changed(self.index, employee),
             );
 
             self.check_modifications(cx);
@@ -122,7 +122,7 @@ impl WidgetMatchEvent for EmployeeConfigItem {
     }
 }
 
-impl EmployeeConfigItem {
+impl EmployeeItem {
     fn get_current_employee(&self) -> Employee {
         let name = self.text_input(id!(name_input)).text();
         let aliases_text = self.text_input(id!(aliases_input)).text();
@@ -162,7 +162,7 @@ impl EmployeeConfigItem {
     }
 }
 
-impl EmployeeConfigItemRef {
+impl EmployeeItemRef {
     pub fn set_padding(&self, cx: &mut Cx, padding: bool) {
         if let Some(mut inner) = self.borrow_mut() {
             inner.view(id!(bg)).set_visible(cx, !padding);

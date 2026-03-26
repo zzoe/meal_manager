@@ -11,8 +11,8 @@ pub fn handle_ui_action(cx: &mut Cx, action: &AppAction, ui: &WidgetRef) {
         AppAction::NavigateToStats => {
             app_shell.show_page(cx, "stats");
         }
-        AppAction::NavigateToConfig => {
-            app_shell.show_page(cx, "config");
+        AppAction::NavigateToEmployees => {
+            app_shell.show_page(cx, "employees");
         }
         _ => (),
     }

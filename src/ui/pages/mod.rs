@@ -1,9 +1,9 @@
 pub mod employees;
 pub mod meal_stats;
 
-// Re-export for backward compatibility (optional, but good for now)
-pub use employees::page as config_page;
-pub use meal_stats as stats_page;
+// 页面模块导出
+pub use employees::{EmployeePage, EmployeePageAction, EmployeePageRef};
+pub use meal_stats::{StatsPage, StatsPageRef};
 
 use makepad_widgets::Cx;
 

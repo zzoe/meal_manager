@@ -6,7 +6,7 @@ live_design! {
     use crate::ui::components::common::*;
     use crate::ui::layout::sidebar::Sidebar;
     use crate::ui::pages::meal_stats::StatsPage;
-    use crate::ui::pages::employees::page::ConfigPage;
+    use crate::ui::pages::employees::employee_page::EmployeePage;
 
     pub AppShell = {{AppShell}} {
         width: Fill, height: Fill
@@ -23,7 +23,7 @@ live_design! {
                     width: Fill, height: Fill
                     active_page: stats
                     stats = <StatsPage> {}
-                    config = <ConfigPage> {}
+                    employees = <EmployeePage> {}
                 }
             }
         }
@@ -65,7 +65,7 @@ impl AppShellRef {
         if let Some(inner) = self.borrow() {
             let page_id = match page {
                 "stats" => live_id!(stats),
-                "config" => live_id!(config),
+                "employees" => live_id!(employees),
                 _ => live_id!(stats),
             };
             inner.view(id!(navigation))

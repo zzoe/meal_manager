@@ -125,6 +125,17 @@ pub struct StatsPage {
 
 impl Widget for StatsPage {
     fn handle_event(&mut self, cx: &mut Cx, event: &Event, scope: &mut Scope) {
+        // 点击 ScrollYView 区域时，将焦点设置给 TextInput
+        let scroll_view = self.view(id!(scroll_view));
+        let text_input = self.text_input(id!(input));
+
+        let scroll_area = scroll_view.area();
+        if scroll_area.is_valid(cx) {
+            if matches!(event.hits(cx, scroll_area), Hit::FingerDown(_)) {
+                text_input.set_key_focus(cx);
+            }
+        }
+
         self.view.handle_event(cx, event, scope);
         self.widget_match_event(cx, event, scope);
     }
@@ -136,18 +147,11 @@ impl Widget for StatsPage {
 
 impl WidgetMatchEvent for StatsPage {
     fn handle_actions(&mut self, cx: &mut Cx, actions: &Actions, _scope: &mut Scope) {
-        if self.button(id!(btn_run)).clicked(actions) {
-            // 更新按钮文本为加载状态
-            self.button(id!(btn_run)).set_text(cx, "正在计算...");
-            self.button(id!(btn_run)).set_disabled(cx, true);
-            self.button(id!(btn_run)).redraw(cx);
-
-            // 获取输入文本并在后台线程执行分析
-            let text = self.text_input(id!(input)).text();
-            #[cfg(not(target_arch = "wasm32"))]
-            cx.spawn_thread(move || Cx::post_action(analyzer::analyze(text)));
-            #[cfg(target_arch = "wasm32")]
-            Cx::post_action(analyzer::analyze(text));
+        // 按钮点击或 Enter 键触发分析
+        let btn_clicked = self.button(id!(btn_run)).clicked(actions);
+        let enter_pressed = self.text_input(id!(input)).returned(actions).is_some();
+        if btn_clicked || enter_pressed {
+            self.trigger_analysis(cx);
         }
 
         // 监听 TextInput 的 Changed 事件，自动滚动到光标位置
@@ -159,13 +163,27 @@ impl WidgetMatchEvent for StatsPage {
 }
 
 impl StatsPage {
+    fn trigger_analysis(&mut self, cx: &mut Cx) {
+        // 更新按钮文本为加载状态
+        self.button(id!(btn_run)).set_text(cx, "正在计算...");
+        self.button(id!(btn_run)).set_disabled(cx, true);
+        self.button(id!(btn_run)).redraw(cx);
+
+        // 获取输入文本并在后台线程执行分析
+        let text = self.text_input(id!(input)).text();
+        #[cfg(not(target_arch = "wasm32"))]
+        cx.spawn_thread(move || Cx::post_action(analyzer::analyze(text)));
+        #[cfg(target_arch = "wasm32")]
+        Cx::post_action(analyzer::analyze(text));
+    }
+
     fn scroll_to_cursor(&self, cx: &mut Cx) {
         let scroll_view = self.view(id!(scroll_view));
         let text_input = self.text_input(id!(input));
 
         // 获取光标位置
         let cursor = text_input.cursor();
-        
+
         // 获取 ScrollYView 并设置滚动位置
         // ScrollYView 实际上是 View，使用 set_scroll_pos 设置滚动
         let scroll_view_ref = scroll_view.as_view();

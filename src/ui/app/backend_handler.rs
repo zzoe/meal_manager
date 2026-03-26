@@ -1,7 +1,7 @@
 use crate::employees::{EmployeeAction, EmployeeOp};
 use crate::meal_stats::MealAnalysisAction;
 use crate::ui::layout::app_shell::AppShellWidgetRefExt;
-use crate::ui::pages::employees::page::ConfigPageWidgetRefExt;
+use crate::ui::pages::employees::employee_page::EmployeePageWidgetRefExt;
 use crate::ui::pages::meal_stats::StatsPageWidgetRefExt;
 use makepad_widgets::{
     Actions, Cx, LiveId, PageFlipWidgetRefExt, ViewWidgetRefExt, WidgetRef, id, live_id, log,
@@ -30,10 +30,10 @@ pub fn handle_backend_result(cx: &mut Cx, actions: &Actions, ui: &WidgetRef) {
                 EmployeeAction::Loaded(employees) => {
                     let nav_ref = app_shell.view(id!(navigation)).as_page_flip();
                     if let Some(mut nav) = nav_ref.borrow_mut()
-                        && let Some(config_page) = nav.page(cx, live_id!(config))
+                        && let Some(employee_page) = nav.page(cx, live_id!(employees))
                     {
-                        config_page
-                            .as_config_page()
+                        employee_page
+                            .as_employee_page()
                             .set_employees(cx, employees.to_vec());
                     }
                 }
