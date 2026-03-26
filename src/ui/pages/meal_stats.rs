@@ -130,10 +130,10 @@ impl Widget for StatsPage {
         let text_input = self.text_input(id!(input));
 
         let scroll_area = scroll_view.area();
-        if scroll_area.is_valid(cx) {
-            if matches!(event.hits(cx, scroll_area), Hit::FingerDown(_)) {
-                text_input.set_key_focus(cx);
-            }
+        if scroll_area.is_valid(cx)
+            && matches!(event.hits(cx, scroll_area), Hit::FingerDown(_))
+        {
+            text_input.set_key_focus(cx);
         }
 
         self.view.handle_event(cx, event, scope);

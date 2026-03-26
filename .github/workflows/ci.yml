@@ -96,7 +96,7 @@ jobs:
           toolchain: nightly
 
       - name: Install cargo-makepad
-        run: cargo install --path=./makepad/tools/cargo_makepad
+        run: cargo install cargo-makepad
 
       - name: Install WASM toolchain
         run: cargo makepad wasm install-toolchain
