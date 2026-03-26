@@ -84,6 +84,32 @@ jobs:
           name: meal_manager-${{ env.TARGET }}
           path: target/release/meal_manager-*-*
 
+  wasm-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          toolchain: nightly
+
+      - name: Install cargo-makepad
+        run: cargo install --path=./makepad/tools/cargo_makepad
+
+      - name: Install WASM toolchain
+        run: cargo makepad wasm install-toolchain
+
+      - name: Build WASM
+        run: cargo makepad wasm --bindgen build -p meal_manager --release
+
+      - name: Upload WASM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: meal_manager-wasm
+          path: target/makepad-wasm-app/release/meal_manager/
+
   release:
     name: Create Release
     needs: rust-ci

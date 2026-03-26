@@ -1,10 +1,8 @@
 use crate::employees::load_config;
 use crate::ui::app::backend_handler::handle_backend_result;
-use crate::ui::app::platform;
 use crate::ui::app::ui_handler::handle_ui_action;
 use crate::ui::layout::app_shell::AppShellWidgetRefExt;
 use crate::ui::pages::employees::employee_page::EmployeePageAction;
-use makepad_widgets::makepad_platform::WindowId;
 use makepad_widgets::*;
 
 #[derive(Clone, Debug, DefaultNone)]
@@ -96,6 +94,9 @@ impl MatchEvent for App {
         // Windows 平台特定设置
         #[cfg(target_os = "windows")]
         {
+            use crate::ui::app::platform;
+            use makepad_widgets::makepad_platform::WindowId;
+            
             platform::show_caption_buttons(&self.ui, cx);
 
             // 计算窗口位置和大小
