@@ -68,7 +68,8 @@ impl AppShellRef {
                 "employees" => live_id!(employees),
                 _ => live_id!(stats),
             };
-            inner.view(id!(navigation))
+            inner
+                .view(id!(navigation))
                 .as_page_flip()
                 .set_active_page(cx, page_id);
         }

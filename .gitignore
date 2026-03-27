@@ -3,3 +3,10 @@
 .idea
 *.redb
 .workbuddy
+
+# cargo-packager output
+/dist
+
+# makepad-wasm output
+target/makepad-wasm-app/
+target/makepad-wasm-target/

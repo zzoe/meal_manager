@@ -1,4 +1,5 @@
-pub mod app;
+pub mod application;
+pub use application as app;
 pub mod components;
 pub mod layout;
 pub mod pages;

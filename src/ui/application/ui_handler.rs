@@ -1,4 +1,4 @@
-use crate::ui::app::AppAction;
+use crate::ui::application::AppAction;
 use crate::ui::layout::app_shell::AppShellWidgetRefExt;
 use makepad_widgets::*;
 

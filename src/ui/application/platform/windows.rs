@@ -145,22 +145,28 @@ pub fn calc_window_position() -> (DVec2, DVec2) {
         let work_area_top_phys = monitor.top;
 
         // 直接使用物理像素计算窗口大小（避免不必要的 DPI 转换）
-        let (window_width_phys, window_height_phys) = calc_window_size(work_area_width_phys, work_area_height_phys);
+        let (window_width_phys, window_height_phys) =
+            calc_window_size(work_area_width_phys, work_area_height_phys);
 
         // 窗口大小需要转换为逻辑像素供 Makepad 内部使用
         let window_width_log = window_width_phys / monitor.dpi_scale;
         let window_height_log = window_height_phys / monitor.dpi_scale;
 
         // 水平居中（物理像素）
-        let position_x_phys = work_area_left_phys + (work_area_width_phys - window_width_phys) / 2.0;
+        let position_x_phys =
+            work_area_left_phys + (work_area_width_phys - window_width_phys) / 2.0;
 
         // 垂直黄金分割（物理像素）- 窗口中心位于黄金分割点
         let golden_division_y_phys = work_area_height_phys * (1.0 - GOLDEN_RATIO);
-        let position_y_phys = work_area_top_phys + golden_division_y_phys - window_height_phys / 2.0;
+        let position_y_phys =
+            work_area_top_phys + golden_division_y_phys - window_height_phys / 2.0;
 
         log!(
             "Before clamp: position_x_phys={}, position_y_phys={}, window_width_phys={}, window_height_phys={}",
-            position_x_phys, position_y_phys, window_width_phys, window_height_phys
+            position_x_phys,
+            position_y_phys,
+            window_width_phys,
+            window_height_phys
         );
 
         // 确保窗口不会超出屏幕边界（物理像素）

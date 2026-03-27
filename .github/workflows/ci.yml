@@ -1,3 +1,6 @@
+# Makepad 项目 CI/CD 工作流
+# 参考：https://makepad.rs/guide/appendix/packaging-guide
+
 name: CI
 
 on:
@@ -10,12 +13,27 @@ permissions:
   contents: write
 
 jobs:
-  rust-ci:
+  # ============================================================
+  # 桌面端构建 (Native Build)
+  # ============================================================
+  native-build:
+    name: Native Build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            format: deb
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            format: nsis
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            format: dmg
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,6 +43,11 @@ jobs:
         with:
           toolchain: nightly
           components: rustfmt, clippy
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.os }}
 
       - name: Install Linux build dependencies
         if: matrix.os == 'ubuntu-latest'
@@ -44,11 +67,19 @@ jobs:
             libpulse-dev \
             libasound2-dev \
             libgl1-mesa-dev \
-            libudev-dev \
-            pkg-config
+            libudev-dev
 
-      # - name: Rustfmt
-      #   run: cargo fmt --all -- --check
+      - name: Install cargo-packager
+        run: |
+          cargo install cargo-packager --locked
+          cargo install --locked --git https://github.com/project-robius/robius-packaging-commands.git robius-packaging-commands
+
+      - name: Make packaging scripts executable
+        run: chmod +x scripts/*.sh
+
+      - name: Rustfmt
+        run: cargo fmt --all -- --check
+        continue-on-error: true
 
       - name: Clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
@@ -59,36 +90,116 @@ jobs:
       - name: Build (release)
         run: cargo build --release
 
-      - name: Package binary
+      - name: Package with cargo-packager
         shell: bash
         run: |
-          # 确定目标名称 (arch-os)
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-            TARGET="x86_64-unknown-linux-gnu"
-            EXT=""
-          elif [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            TARGET="x86_64-pc-windows-msvc"
-            EXT=".exe"
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            TARGET="aarch64-apple-darwin"
-            EXT=""
+          # 先收集 makepad 资源到 ./dist/resources/
+          bash scripts/before-packaging.sh
+
+          echo "=== 打包前：检查 dist 目录 ==="
+          if [ -d "dist" ]; then
+            ls -la dist/
+          else
+            echo "dist 目录不存在"
           fi
-          
-          # 创建带目标名称的二进制文件
-          cp "target/release/meal_manager${EXT}" "target/release/meal_manager-${TARGET}${EXT}"
-          echo "TARGET=${TARGET}" >> $GITHUB_ENV
+
+          echo "=== 开始打包 ==="
+          cargo packager --release --formats ${{ matrix.format }}
+
+          echo "=== 打包后：检查 dist 目录 ==="
+          ls -la dist/
+          find dist -type f
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: meal_manager-${{ env.TARGET }}
-          path: target/release/meal_manager-*-*
+          name: meal_manager-${{ matrix.os }}
+          path: dist/*
 
+  # ============================================================
+  # WASM 构建
+  # ============================================================
+  wasm-build:
+    name: WASM Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          toolchain: nightly
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          key: wasm
+
+      - name: Install cargo-makepad
+        run: |
+          cargo install --git https://github.com/makepad/makepad --tag 1.0.0 cargo-makepad --force
+          echo "cargo-makepad 安装完成"
+
+      - name: Install WASM target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Install rust-src
+        run: rustup component add rust-src --toolchain nightly
+
+      - name: Install wasm-bindgen-cli
+        run: cargo install wasm-bindgen-cli --locked
+
+      - name: Build WASM
+        run: |
+          echo "=== 开始构建 WASM ==="
+          cargo makepad wasm --bindgen build -p meal_manager --release
+
+          echo "=== 构建完成，检查输出 ==="
+          ls -la target/makepad-wasm-app/ 2>/dev/null || echo "makepad-wasm-app 目录不存在"
+          find target/makepad-wasm-app -type f 2>/dev/null | head -50
+
+      - name: Package WASM
+        shell: bash
+        run: |
+          WASM_DIR="target/makepad-wasm-app/release/meal_manager"
+
+          # 检查目录是否存在
+          if [ ! -d "${WASM_DIR}" ]; then
+            echo "Error: WASM output directory not found: ${WASM_DIR}"
+            echo "=== 搜索 makepad-wasm-app 目录 ==="
+            find target/makepad-wasm-app -type d 2>/dev/null | head -20
+            echo "=== 搜索 index.html ==="
+            find target -name "index.html" 2>/dev/null | head -10
+            exit 1
+          fi
+
+          echo "=== WASM 输出目录：${WASM_DIR} ==="
+          ls -laR "${WASM_DIR}"
+
+          # 打包
+          cd "${WASM_DIR}"
+          tar -czf meal_manager-wasm.tar.gz .
+
+          echo "=== 打包完成 ==="
+          ls -lh meal_manager-wasm.tar.gz
+
+      - name: Upload WASM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: meal_manager-wasm
+          path: target/makepad-wasm-app/release/meal_manager/meal_manager-wasm.tar.gz
+
+  # ============================================================
+  # 创建 GitHub Release
+  # ============================================================
   release:
     name: Create Release
-    needs: rust-ci
+    needs: [native-build, wasm-build]
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
+
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -96,13 +207,32 @@ jobs:
           path: artifacts
           pattern: meal_manager-*
 
-      - name: List artifacts
-        run: ls -R artifacts
+      - name: Prepare release files
+        run: |
+          mkdir -p release_files
+
+          # 检查 artifact 是否存在
+          if [ ! -d "artifacts" ]; then
+            echo "Error: artifacts directory not found"
+            exit 1
+          fi
+
+          # 复制所有 artifact 文件
+          cp -v artifacts/meal_manager-*/* release_files/
+
+          # 验证文件已复制
+          if [ ! "$(ls -A release_files)" ]; then
+            echo "Error: No files copied to release_files"
+            exit 1
+          fi
+
+          echo "=== 发布文件 ==="
+          ls -la release_files/
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          files: artifacts/meal_manager-*/meal_manager-*
+          files: release_files/*
           draft: false
           prerelease: false
         env:

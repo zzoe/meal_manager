@@ -272,7 +272,10 @@ impl WidgetMatchEvent for EmployeePage {
                             self.db_employees.push(cleaned_employee.clone());
                             // 重置草稿箱
                             self.draft_new_employee = Employee::default();
-                            log!("EmployeePage: Adding new employee {}", cleaned_employee.name);
+                            log!(
+                                "EmployeePage: Adding new employee {}",
+                                cleaned_employee.name
+                            );
                             is_added = true;
 
                             // 仅新增该行数据

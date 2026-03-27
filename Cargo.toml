@@ -1,12 +1,48 @@
 [package]
 name = "meal_manager"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
+description = "Meal Manager - 餐饮管理系统"
+authors = ["Your Name"]
+license = "MIT"
+
+# cargo-packager 配置 (官方要求)
+[package.metadata.packager]
+product_name = "Meal Manager"
+identifier = "com.meal_manager.app"
+authors = ["zoe"]
+description = "Meal Manager - 餐饮管理系统"
+out_dir = "./dist"
+
+# 注意：before-packaging-command 已移至 CI 和本地脚本中执行
+# 因为 Cargo.toml 不支持按平台条件判断二进制文件名后缀
+
+# 资源文件列表 (官方要求的完整列表)
+resources = [
+    # Makepad 内置资源 (必需)
+    { src = "./dist/resources/makepad_widgets", target = "makepad_widgets" },
+    { src = "./dist/resources/makepad_fonts_chinese_bold", target = "makepad_fonts_chinese_bold" },
+    { src = "./dist/resources/makepad_fonts_chinese_bold_2", target = "makepad_fonts_chinese_bold_2" },
+    { src = "./dist/resources/makepad_fonts_chinese_regular", target = "makepad_fonts_chinese_regular" },
+    { src = "./dist/resources/makepad_fonts_chinese_regular_2", target = "makepad_fonts_chinese_regular_2" },
+    { src = "./dist/resources/makepad_fonts_emoji", target = "makepad_fonts_emoji" },
+]
+
+# Windows 特定配置
+[package.metadata.packager.nsis]
+appdata_paths = ["$LOCALAPPDATA/$PRODUCTNAME"]
+
+# macOS 特定配置
+[package.metadata.packager.macos]
+minimum_system_version = "10.13"
+
+# Linux 特定配置
+[package.metadata.packager.deb]
+section = "utils"
 
 [dependencies]
 # ui
-makepad-widgets = "*"
-# makepad-widgets = { git = "https://github.com/makepad/makepad", branch = "rik" }
+makepad-widgets = { git = "https://github.com/makepad/makepad", tag = "1.0.0" }
 # 序列化
 serde = { version = "*", features = ["derive"] }
 serde_json = "*"
@@ -17,7 +53,7 @@ anyhow = "*"
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # 本地数据库
 redb = "*"
-# Windows API
+
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.58", features = ["Win32_Foundation", "Win32_Graphics_Gdi", "Win32_UI_WindowsAndMessaging", "Win32_UI_HiDpi"] }
 
