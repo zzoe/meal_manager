@@ -16,7 +16,9 @@ out_dir = "./dist"
 
 # before-each-package-command: copies makepad resources to ./dist/resources/
 # and rebuilds with MAKEPAD_PACKAGE_DIR set correctly for each platform
-before-each-package-command = "robius-packaging-commands before-each-package --binary-name meal_manager --path-to-binary ./target/release/meal_manager"
+# Uses wrapper script to also copy font resources (chinese, emoji)
+# that robius-packaging-commands doesn't handle automatically
+before-each-package-command = "bash scripts/before-each-package.sh"
 
 # 资源文件列表 (官方要求的完整列表)
 resources = [

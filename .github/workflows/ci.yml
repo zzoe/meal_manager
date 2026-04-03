@@ -93,8 +93,6 @@ jobs:
       - name: Package with cargo-packager
         shell: bash
         run: |
-          # cargo packager will automatically invoke before-each-package-command
-          # from Cargo.toml to copy makepad resources and rebuild
           echo "=== 开始打包 ==="
           cargo packager --release --formats ${{ matrix.format }} --verbose
 
