@@ -16,11 +16,7 @@ out_dir = "./dist"
 
 # before-each-package-command: copies makepad resources to ./dist/resources/
 # and rebuilds with MAKEPAD_PACKAGE_DIR set correctly for each platform
-before-each-package-command = """
-robius-packaging-commands before-each-package \\
-    --binary-name meal_manager \\
-    --path-to-binary ./target/release/meal_manager
-"""
+before-each-package-command = "robius-packaging-commands before-each-package --binary-name meal_manager --path-to-binary ./target/release/meal_manager"
 
 # 资源文件列表 (官方要求的完整列表)
 resources = [
