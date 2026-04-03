@@ -114,6 +114,24 @@ jobs:
           ls -la dist/
           find dist -type f
 
+      - name: Re-sign macOS app bundle
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          # The binary is signed by rustc during cargo build, but that signature
+          # doesn't match the final .app bundle structure. We need to re-sign
+          # the entire .app bundle with an ad-hoc signature so Gatekeeper
+          # accepts it.
+          APP_BUNDLE="dist/Meal Manager.app"
+          if [ -d "$APP_BUNDLE" ]; then
+            echo "Re-signing $APP_BUNDLE with ad-hoc signature..."
+            codesign --force --deep --sign - "$APP_BUNDLE"
+            echo "Verifying signature..."
+            codesign -vvv --deep "$APP_BUNDLE" 2>&1
+          else
+            echo "Warning: $APP_BUNDLE not found, skipping re-sign"
+          fi
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
