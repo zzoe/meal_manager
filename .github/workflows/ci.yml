@@ -142,11 +142,8 @@ jobs:
           cargo install --git https://github.com/makepad/makepad --tag 1.0.0 cargo-makepad --force
           echo "cargo-makepad 安装完成"
 
-      - name: Install WASM target
-        run: rustup target add wasm32-unknown-unknown
-
-      - name: Install rust-src
-        run: rustup component add rust-src --toolchain nightly
+      - name: Install WASM toolchain
+        run: cargo makepad wasm install-toolchain
 
       - name: Install wasm-bindgen-cli
         run: |
