@@ -10,3 +10,4 @@
 # makepad-wasm output
 target/makepad-wasm-app/
 target/makepad-wasm-target/
+.ci-artifacts/
