@@ -14,8 +14,13 @@ authors = ["zoe"]
 description = "Meal Manager - 餐饮管理系统"
 out_dir = "./dist"
 
-# 注意：before-packaging-command 已移至 CI 和本地脚本中执行
-# 因为 Cargo.toml 不支持按平台条件判断二进制文件名后缀
+# before-each-package-command: copies makepad resources to ./dist/resources/
+# and rebuilds with MAKEPAD_PACKAGE_DIR set correctly for each platform
+before-each-package-command = """
+robius-packaging-commands before-each-package \\
+    --binary-name meal_manager \\
+    --path-to-binary ./target/release/meal_manager
+"""
 
 # 资源文件列表 (官方要求的完整列表)
 resources = [

@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "workspace": {
+    "name": "meal_manager",
+    "createdAt": 1775182435906,
+    "preset": "automation"
+  },
+  "authorizedRoots": [
+    "/Users/zoe/Source/github.com/zzoe/meal_manager"
+  ]
+}

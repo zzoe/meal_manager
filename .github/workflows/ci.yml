@@ -93,18 +93,10 @@ jobs:
       - name: Package with cargo-packager
         shell: bash
         run: |
-          # 先收集 makepad 资源到 ./dist/resources/
-          bash scripts/before-packaging.sh
-
-          echo "=== 打包前：检查 dist 目录 ==="
-          if [ -d "dist" ]; then
-            ls -la dist/
-          else
-            echo "dist 目录不存在"
-          fi
-
+          # cargo packager will automatically invoke before-each-package-command
+          # from Cargo.toml to copy makepad resources and rebuild
           echo "=== 开始打包 ==="
-          cargo packager --release --formats ${{ matrix.format }}
+          cargo packager --release --formats ${{ matrix.format }} --verbose
 
           echo "=== 打包后：检查 dist 目录 ==="
           ls -la dist/
