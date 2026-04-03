@@ -179,18 +179,17 @@ jobs:
           echo "=== WASM 输出目录：${WASM_DIR} ==="
           ls -laR "${WASM_DIR}"
 
-          # 打包
-          cd "${WASM_DIR}"
-          tar -czf meal_manager-wasm.tar.gz .
+          # 打包（输出到父目录，避免 tar 读取自身）
+          tar -czf "${WASM_DIR}/../meal_manager-wasm.tar.gz" -C "${WASM_DIR}" .
 
           echo "=== 打包完成 ==="
-          ls -lh meal_manager-wasm.tar.gz
+          ls -lh "${WASM_DIR}/../meal_manager-wasm.tar.gz"
 
       - name: Upload WASM artifact
         uses: actions/upload-artifact@v4
         with:
           name: meal_manager-wasm
-          path: target/makepad-wasm-app/release/meal_manager/meal_manager-wasm.tar.gz
+          path: target/makepad-wasm-app/release/meal_manager-wasm.tar.gz
 
   # ============================================================
   # 创建 GitHub Release
