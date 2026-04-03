@@ -29,9 +29,9 @@ if [ -n "$MAKEPAD_DIR" ] && [ -d "$MAKEPAD_DIR" ]; then
     RESOURCES_DIR="./dist/resources"
     mkdir -p "$RESOURCES_DIR"
 
-    for font_pkg in fonts_chinese_bold fonts_chinese_bold_2 fonts_chinese_regular fonts_chinese_regular_2 fonts_emoji; do
-        src="$MAKEPAD_DIR/widgets/$font_pkg/resources"
-        dest="$RESOURCES_DIR/makepad_$font_pkg/resources"
+    for font_pkg in chinese_bold chinese_bold_2 chinese_regular chinese_regular_2 emoji; do
+        src="$MAKEPAD_DIR/widgets/fonts/$font_pkg/resources"
+        dest="$RESOURCES_DIR/makepad_fonts_$font_pkg/resources"
         echo "DEBUG: Checking $src -> $dest"
         if [ -d "$src" ]; then
             echo "Copying $font_pkg resources from $src to $dest"
