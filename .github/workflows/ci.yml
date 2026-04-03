@@ -90,6 +90,20 @@ jobs:
       - name: Build (release)
         run: cargo build --release
 
+      - name: Prepare font resource directories
+        shell: bash
+        run: |
+          # cargo-packager checks if resource source directories exist BEFORE
+          # calling before-each-package-command. If they don't exist, it
+          # silently skips them. So we pre-create empty directories here,
+          # and before-each-package.sh fills them with actual font files.
+          mkdir -p dist/resources/makepad_fonts_chinese_bold/resources
+          mkdir -p dist/resources/makepad_fonts_chinese_bold_2/resources
+          mkdir -p dist/resources/makepad_fonts_chinese_regular/resources
+          mkdir -p dist/resources/makepad_fonts_chinese_regular_2/resources
+          mkdir -p dist/resources/makepad_fonts_emoji/resources
+          echo "Font resource directories created."
+
       - name: Package with cargo-packager
         shell: bash
         run: |
