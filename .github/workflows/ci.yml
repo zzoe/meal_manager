@@ -165,6 +165,35 @@ jobs:
           ls -la target/makepad-wasm-app/ 2>/dev/null || echo "makepad-wasm-app 目录不存在"
           find target/makepad-wasm-app -type f 2>/dev/null | head -50
 
+      - name: Copy font resources for WASM
+        shell: bash
+        run: |
+          WASM_DIR="target/makepad-wasm-app/release/meal_manager"
+          RESOURCES_DIR="${WASM_DIR}/resources"
+
+          # Remove .gitkeep placeholder
+          rm -f "${RESOURCES_DIR}/.gitkeep"
+
+          # Find the makepad checkout directory
+          MAKEPAD_DIR=$(find ~/.cargo/git/checkouts/makepad-* -maxdepth 2 -type d -name "widgets" 2>/dev/null | head -1 | xargs dirname 2>/dev/null || true)
+
+          if [ -n "$MAKEPAD_DIR" ] && [ -d "$MAKEPAD_DIR" ]; then
+            for font_pkg in chinese_bold chinese_bold_2 chinese_regular chinese_regular_2 emoji; do
+              src="$MAKEPAD_DIR/widgets/fonts/$font_pkg/resources"
+              dest="$RESOURCES_DIR/makepad_fonts_$font_pkg/resources"
+              if [ -d "$src" ]; then
+                echo "Copying $font_pkg resources to $dest"
+                mkdir -p "$dest"
+                cp -r "$src"/* "$dest"/
+              else
+                echo "WARNING: Source directory $src does not exist!"
+              fi
+            done
+            echo "Font resources copied for WASM."
+          else
+            echo "WARNING: Could not find makepad checkout directory, font resources not copied."
+          fi
+
       - name: Package WASM
         shell: bash
         run: |
