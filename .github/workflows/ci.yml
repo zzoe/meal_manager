@@ -113,9 +113,6 @@ jobs:
           cargo packager --release --formats app --verbose
 
           # Step 2: Re-sign the .app bundle with ad-hoc signature
-          # The binary is signed by rustc during cargo build, but that signature
-          # doesn't match the final .app bundle structure. We need to re-sign
-          # the entire .app bundle with an ad-hoc signature so Gatekeeper accepts it.
           APP_BUNDLE="dist/Meal Manager.app"
           if [ -d "$APP_BUNDLE" ]; then
             echo "Re-signing $APP_BUNDLE with ad-hoc signature..."
@@ -127,9 +124,14 @@ jobs:
             exit 1
           fi
 
-          # Step 3: Build DMG from the signed .app
-          echo "=== Building DMG ==="
-          cargo packager --release --formats dmg --verbose
+          # Step 3: Manually create DMG from the signed .app
+          # (Don't use cargo packager --formats dmg because it would
+          # re-invoke before-each-package-command and re-compile,
+          # which would strip the signature we just applied)
+          echo "=== Creating DMG manually ==="
+          cd dist
+          hdiutil create -volname "Meal Manager" -srcfolder "Meal Manager.app" -ov -format UDZO "Meal Manager_0.2.0_aarch64.dmg"
+          cd ..
 
           echo "=== 打包后：检查 dist 目录 ==="
           ls -la dist/
