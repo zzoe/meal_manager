@@ -207,7 +207,7 @@ jobs:
           ls -la target/makepad-wasm-app/ 2>/dev/null || echo "makepad-wasm-app 目录不存在"
           find target/makepad-wasm-app -type f 2>/dev/null | head -50
 
-      - name: Copy font resources for WASM
+      - name: Copy WASM runtime files and font resources
         shell: bash
         run: |
           WASM_DIR="target/makepad-wasm-app/release/meal_manager"
@@ -220,6 +220,22 @@ jobs:
           MAKEPAD_DIR=$(find ~/.cargo/git/checkouts/makepad-* -maxdepth 2 -type d -name "widgets" 2>/dev/null | head -1 | xargs dirname 2>/dev/null || true)
 
           if [ -n "$MAKEPAD_DIR" ] && [ -d "$MAKEPAD_DIR" ]; then
+            # Copy WASM runtime JS/CSS files that cargo-makepad may have missed
+            # These are needed by index.html to load the WASM module
+            echo "Copying WASM runtime files..."
+            mkdir -p "${WASM_DIR}/makepad_platform"
+            mkdir -p "${WASM_DIR}/makepad_wasm_bridge"
+
+            cp "$MAKEPAD_DIR/platform/src/os/web/full_canvas.css" "${WASM_DIR}/makepad_platform/"
+            cp "$MAKEPAD_DIR/platform/src/os/web/web_gl.js" "${WASM_DIR}/makepad_platform/"
+            cp "$MAKEPAD_DIR/platform/src/os/web/web.js" "${WASM_DIR}/makepad_platform/"
+            cp "$MAKEPAD_DIR/platform/src/os/web/web_worker.js" "${WASM_DIR}/makepad_platform/"
+            cp "$MAKEPAD_DIR/platform/src/os/web/auto_reload.js" "${WASM_DIR}/makepad_platform/"
+            cp "$MAKEPAD_DIR/platform/src/os/web/audio_worklet.js" "${WASM_DIR}/makepad_platform/"
+            cp "$MAKEPAD_DIR/libs/wasm_bridge/src/wasm_bridge.js" "${WASM_DIR}/makepad_wasm_bridge/"
+            echo "WASM runtime files copied."
+
+            # Copy font resources
             for font_pkg in chinese_bold chinese_bold_2 chinese_regular chinese_regular_2 emoji; do
               src="$MAKEPAD_DIR/widgets/fonts/$font_pkg/resources"
               dest="$RESOURCES_DIR/makepad_fonts_$font_pkg/resources"
@@ -233,7 +249,7 @@ jobs:
             done
             echo "Font resources copied for WASM."
           else
-            echo "WARNING: Could not find makepad checkout directory, font resources not copied."
+            echo "WARNING: Could not find makepad checkout directory, resources not copied."
           fi
 
       - name: Package WASM
