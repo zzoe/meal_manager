@@ -14,6 +14,17 @@ robius-packaging-commands before-each-package \
     --binary-name meal_manager \
     --path-to-binary ./target/release/meal_manager
 
+# Strip the ad-hoc signature from the binary that rustc added during compilation.
+# If we don't do this, cargo-packager will embed the binary with its original signature
+# into the .app bundle, but that signature doesn't account for the Resources directory
+# and other bundle contents. This causes Gatekeeper to reject the app as "damaged".
+# By stripping the signature, cargo-packager can apply a fresh signature to the
+# entire .app bundle that correctly covers all resources.
+if command -v codesign &>/dev/null; then
+    codesign --remove-signature ./target/release/meal_manager 2>/dev/null || true
+    echo "Stripped signature from binary."
+fi
+
 # Now copy font resources that were missed
 # Find the makepad checkout directory
 MAKEPAD_DIR=$(find ~/.cargo/git/checkouts/makepad-* -maxdepth 2 -type d -name "widgets" 2>/dev/null | head -1 | xargs dirname 2>/dev/null || true)
