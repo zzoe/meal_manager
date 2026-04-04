@@ -148,7 +148,15 @@ jobs:
           ls -la dist/
           find dist -type f
 
+      - name: Upload macOS artifact
+        if: matrix.os == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: meal_manager-${{ matrix.os }}
+          path: dist/*.dmg
+
       - name: Upload artifact
+        if: matrix.os != 'macos-latest'
         uses: actions/upload-artifact@v4
         with:
           name: meal_manager-${{ matrix.os }}
