@@ -104,7 +104,39 @@ jobs:
           mkdir -p dist/resources/makepad_fonts_emoji/resources
           echo "Font resource directories created."
 
+      - name: Package macOS app and sign
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          # Step 1: Build .app bundle first (without DMG)
+          echo "=== Building .app bundle ==="
+          cargo packager --release --formats app --verbose
+
+          # Step 2: Re-sign the .app bundle with ad-hoc signature
+          # The binary is signed by rustc during cargo build, but that signature
+          # doesn't match the final .app bundle structure. We need to re-sign
+          # the entire .app bundle with an ad-hoc signature so Gatekeeper accepts it.
+          APP_BUNDLE="dist/Meal Manager.app"
+          if [ -d "$APP_BUNDLE" ]; then
+            echo "Re-signing $APP_BUNDLE with ad-hoc signature..."
+            codesign --force --deep --sign - "$APP_BUNDLE"
+            echo "Verifying signature..."
+            codesign -vvv --deep "$APP_BUNDLE" 2>&1
+          else
+            echo "ERROR: $APP_BUNDLE not found!"
+            exit 1
+          fi
+
+          # Step 3: Build DMG from the signed .app
+          echo "=== Building DMG ==="
+          cargo packager --release --formats dmg --verbose
+
+          echo "=== 打包后：检查 dist 目录 ==="
+          ls -la dist/
+          find dist -type f
+
       - name: Package with cargo-packager
+        if: matrix.os != 'macos-latest'
         shell: bash
         run: |
           echo "=== 开始打包 ==="
@@ -113,24 +145,6 @@ jobs:
           echo "=== 打包后：检查 dist 目录 ==="
           ls -la dist/
           find dist -type f
-
-      - name: Re-sign macOS app bundle
-        if: matrix.os == 'macos-latest'
-        shell: bash
-        run: |
-          # The binary is signed by rustc during cargo build, but that signature
-          # doesn't match the final .app bundle structure. We need to re-sign
-          # the entire .app bundle with an ad-hoc signature so Gatekeeper
-          # accepts it.
-          APP_BUNDLE="dist/Meal Manager.app"
-          if [ -d "$APP_BUNDLE" ]; then
-            echo "Re-signing $APP_BUNDLE with ad-hoc signature..."
-            codesign --force --deep --sign - "$APP_BUNDLE"
-            echo "Verifying signature..."
-            codesign -vvv --deep "$APP_BUNDLE" 2>&1
-          else
-            echo "Warning: $APP_BUNDLE not found, skipping re-sign"
-          fi
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
